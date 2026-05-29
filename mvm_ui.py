@@ -310,7 +310,7 @@ body{background:#EDF4EF;font-family:'Inter',sans-serif;color:#0F2419;min-height:
 
 /* KNOB */
 .knob-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;width:100%;}
-.knob{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#e8f2ec,#d0e4d8);border:1.5px solid rgba(6,78,59,.18);position:relative;cursor:grab;transition:border-color .15s,box-shadow .15s;}
+.knob{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#e8f2ec,#d0e4d8);border:1.5px solid rgba(6,78,59,.18);position:relative;cursor:grab;transition:border-color .15s,box-shadow .15s;touch-action:none;}
 .knob:hover{border-color:rgba(6,78,59,.35);box-shadow:0 2px 8px rgba(6,78,59,.12);}
 .knob:active{cursor:grabbing;}
 .knob-dot{position:absolute;width:3px;height:13px;background:#064E3B;border-radius:2px;top:5px;left:50%;transform-origin:50% 19px;transform:translateX(-50%) rotate(0deg);transition:none;}
@@ -321,9 +321,9 @@ body{background:#EDF4EF;font-family:'Inter',sans-serif;color:#0F2419;min-height:
 /* FADER */
 .fader-section{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;}
 .fader-lbl{font-size:7px;color:rgba(6,78,59,.4);letter-spacing:.1em;text-transform:uppercase;}
-.fader-track{width:14px;height:120px;background:#E8F2EC;border:1px solid rgba(6,78,59,.15);border-radius:7px;position:relative;cursor:pointer;}
+.fader-track{width:14px;height:120px;background:#E8F2EC;border:1px solid rgba(6,78,59,.15);border-radius:7px;position:relative;cursor:pointer;touch-action:none;}
 .fader-fill{position:absolute;bottom:0;left:0;right:0;border-radius:7px;pointer-events:none;}
-.fader-thumb{position:absolute;width:40px;height:18px;border-radius:4px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#fff,#e8f0ec);border:1px solid rgba(6,78,59,.2);box-shadow:0 2px 8px rgba(6,78,59,.15);cursor:grab;z-index:2;}
+.fader-thumb{position:absolute;width:40px;height:18px;border-radius:4px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#fff,#e8f0ec);border:1px solid rgba(6,78,59,.2);box-shadow:0 2px 8px rgba(6,78,59,.15);cursor:grab;z-index:2;touch-action:none;}
 .fader-thumb:active{cursor:grabbing;}
 .fader-thumb::before,.fader-thumb::after{content:'';position:absolute;left:18%;right:18%;height:1px;background:rgba(6,78,59,.15);}
 .fader-thumb::before{top:calc(50% - 2px);}
@@ -714,23 +714,26 @@ const es = new EventSource('/stream');
 es.onmessage = e => { if (!isDragging) applyState(JSON.parse(e.data)); };
 es.onerror   = () => { document.getElementById('hdr-vals').textContent = 'reconnecting...'; };
 
-// Each drag gets its own isolated mousemove+mouseup pair — no shared state contention
 function bindDrag(el, getStartVal, onMove, onDrop) {
-  el.addEventListener('mousedown', e => {
+  el.addEventListener('pointerdown', e => {
     e.preventDefault();
-    isDragging    = true;
-    const startY  = e.clientY;
-    const startV  = getStartVal();
+    e.stopPropagation();
+    try { el.setPointerCapture(e.pointerId); } catch(_) {}
+    isDragging = true;
+    const startY = e.clientY;
+    const startV = getStartVal();
 
     function move(e2) { onMove(startY, e2.clientY, startV); }
-    function up()   {
+    function up() {
       isDragging = false;
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup',   up);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup',   up);
+      el.removeEventListener('pointercancel', up);
       onDrop();
     }
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup',   up);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup',   up);
+    el.addEventListener('pointercancel', up);
   });
 }
 
