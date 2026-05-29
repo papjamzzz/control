@@ -28,7 +28,7 @@ def load_state() -> dict:
         if filter_ not in ("HIGHPASS", "PARAMETRIC", "LOWPASS"):
             filter_ = "PARAMETRIC"
         voice = raw.get("voice", "STUDIO")
-        if voice not in ("ANECHOIC", "STUDIO", "HALL"):
+        if voice not in ("DIRECT", "STUDIO", "HALL"):
             voice = "STUDIO"
         return {
             "mode":      mode,
@@ -196,8 +196,8 @@ def build_system_prompt(state: dict) -> str:
     else:
         decay_rule = "DECAY: SHORT — tight, compressed, every word counts."
 
-    if voice == "ANECHOIC":
-        voice_rule = "VOICE: ANECHOIC — dead room, output only, zero commentary or preamble."
+    if voice == "DIRECT":
+        voice_rule = "VOICE: DIRECT — dead room, output only, zero commentary or preamble."
     elif voice == "HALL":
         voice_rule = "VOICE: HALL — full resonance, collaborative, thinks out loud with you."
     else:
