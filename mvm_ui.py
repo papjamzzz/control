@@ -4,7 +4,6 @@
 import json
 import time
 import os
-import importlib.util
 from pathlib import Path
 from flask import Flask, Response, request, jsonify
 
@@ -23,15 +22,155 @@ STATE_FILE = Path.home() / ".streamfader" / "state.json"
 PORT  = int(os.environ.get("PORT", 5570))
 MODEL = os.environ.get("CTRL_MODEL", "claude-sonnet-4-6")
 
-# Load build_system_prompt from ctrl script without importing the whole CLI
-_ctrl_path = Path(__file__).resolve().parent / "ctrl"
-if _ctrl_path.exists():
-    _spec = importlib.util.spec_from_file_location("_ctrl", _ctrl_path)
-    _ctrl = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_ctrl)
-    _build_prompt = _ctrl.build_system_prompt
-else:
-    _build_prompt = lambda s: "You are a helpful AI assistant."
+
+# ── Prompt builder ────────────────────────────────────────────────────────────
+
+def _build_prompt(state: dict) -> str:
+    mode      = state["mode"]
+    intensity = state["intensity"]
+    depth     = state["depth"]
+
+    if mode == "EXPLORE":
+        mode_rules = (
+            "MODE: EXPLORE\n"
+            "- Analysis only. No code changes.\n"
+            "- End with a single decision point. Nothing else."
+        )
+    elif mode == "FIX":
+        mode_rules = (
+            "MODE: FIX\n"
+            "- Identify one root cause only.\n"
+            "- Produce one fix only.\n"
+            "- Do not address secondary issues."
+        )
+    else:
+        mode_rules = (
+            "MODE: BUILD\n"
+            "- Implement one atomic change only.\n"
+            "- No refactoring unless explicitly required."
+        )
+
+    if intensity >= 0.7:
+        intensity_rule = "INTENSITY: HIGH — minimal output, direct execution only."
+    elif intensity >= 0.4:
+        intensity_rule = "INTENSITY: MED — concise reasoning, focused output."
+    else:
+        intensity_rule = "INTENSITY: LOW — verbose reasoning, exploratory tone."
+
+    if depth >= 0.7:
+        depth_rule = "DEPTH: HIGH — deeper diagnostic reasoning allowed."
+    elif depth >= 0.4:
+        depth_rule = "DEPTH: MED — moderate analysis depth."
+    else:
+        depth_rule = "DEPTH: LOW — surface-level reasoning only."
+
+    certainty = state.get("certainty", 0.5)
+    risk      = state.get("risk",      0.5)
+    stance    = state.get("stance",    "GUESS")
+
+    if certainty >= 0.7:
+        certainty_rule = "CERTAINTY: HIGH — commit to one solution, do not present alternatives."
+    elif certainty >= 0.4:
+        certainty_rule = "CERTAINTY: MED — give a recommendation with brief reasoning."
+    else:
+        certainty_rule = "CERTAINTY: LOW — show 2-3 approaches with pros and cons, do not pick."
+
+    if risk >= 0.7:
+        risk_rule = "RISK: HIGH — best solution even if it requires significant changes."
+    elif risk >= 0.4:
+        risk_rule = "RISK: MED — balanced approach, prefer existing patterns where reasonable."
+    else:
+        risk_rule = "RISK: LOW — stay close to existing patterns, minimal disruption."
+
+    if stance == "OPTIONS":
+        stance_rule = "STANCE: OPTIONS — present alternatives only, do not implement anything."
+    elif stance == "DECIDE":
+        stance_rule = "STANCE: DECIDE — pick one approach and implement it, zero explanation of alternatives."
+    else:
+        stance_rule = "STANCE: GUESS — give your best recommendation with brief reasoning, then implement."
+
+    scope     = state.get("scope",     0.5)
+    bandwidth = state.get("bandwidth", 0.5)
+    filter_   = state.get("filter",    "PARAMETRIC")
+
+    if scope >= 0.7:
+        scope_rule = "SCOPE: WIDE — consider the full codebase, pull in all related context."
+    elif scope >= 0.4:
+        scope_rule = "SCOPE: MED — consider this module and its direct dependencies."
+    else:
+        scope_rule = "SCOPE: NARROW — stay inside the immediate file or function only."
+
+    if bandwidth >= 0.7:
+        bandwidth_rule = "BANDWIDTH: WIDE — broad strokes, pull in adjacent concerns freely."
+    elif bandwidth >= 0.4:
+        bandwidth_rule = "BANDWIDTH: MED — shaped focus, related things welcome if directly relevant."
+    else:
+        bandwidth_rule = "BANDWIDTH: NARROW — surgical precision, touch nothing adjacent."
+
+    if filter_ == "HIGHPASS":
+        filter_rule = "FILTER: HIGHPASS — cut everything below this file, strict local scope."
+    elif filter_ == "LOWPASS":
+        filter_rule = "FILTER: LOWPASS — full spectrum allowed, global context welcome."
+    else:
+        filter_rule = "FILTER: PARAMETRIC — shaped band around the problem, selective context."
+
+    room  = state.get("room",  0.3)
+    decay = state.get("decay", 0.3)
+    voice = state.get("voice", "STUDIO")
+
+    if room >= 0.7:
+        room_rule = "ROOM: WET — open space around your output, breathing room, think out loud."
+    elif room >= 0.4:
+        room_rule = "ROOM: MED — some space, conversational but not dry."
+    else:
+        room_rule = "ROOM: DRY — close-mic'd, no space, just the output."
+
+    if decay >= 0.7:
+        decay_rule = "DECAY: LONG — ideas can echo and build, spacious language."
+    elif decay >= 0.4:
+        decay_rule = "DECAY: MED — moderate density, words earn their place."
+    else:
+        decay_rule = "DECAY: SHORT — tight, compressed, every word counts."
+
+    if voice == "ANECHOIC":
+        voice_rule = "VOICE: ANECHOIC — dead room, output only, zero commentary or preamble."
+    elif voice == "HALL":
+        voice_rule = "VOICE: HALL — full resonance, collaborative, thinks out loud with you."
+    else:
+        voice_rule = "VOICE: STUDIO — professional, measured, clean response with minimal framing."
+
+    state_block = json.dumps(state)
+
+    return "\n".join([
+        mode_rules,
+        intensity_rule,
+        depth_rule,
+        certainty_rule,
+        risk_rule,
+        stance_rule,
+        scope_rule,
+        bandwidth_rule,
+        filter_rule,
+        room_rule,
+        decay_rule,
+        voice_rule,
+        "",
+        "GLOBAL CONSTRAINTS:",
+        "- One action per run.",
+        "- No multi-step planning chains.",
+        "- No combined modes.",
+        "- Stop immediately after completing the task.",
+        "",
+        "OUTPUT FORMAT:",
+        "STATE:",
+        state_block,
+        "",
+        "ACTION:",
+        "<what you will do — one line>",
+        "",
+        "RESULT:",
+        "<final output>",
+    ])
 
 app = Flask(__name__)
 
