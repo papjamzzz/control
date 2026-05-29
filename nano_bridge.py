@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 Mode Via MIDI — nanoKONTROL2 bridge
-Track 1: Fader=intensity  Knob=depth    S=EXPLORE  M=FIX      R=BUILD
-Track 2: Fader=certainty  Knob=risk     S=OPTIONS  M=GUESS    R=DECIDE
+Track 1: Fader=intensity  Knob=depth      S=EXPLORE  M=FIX     R=BUILD
+Track 2: Fader=certainty  Knob=risk       S=LIST     M=GUIDE   R=DECIDE
+Track 3: Fader=scope      Knob=bandwidth  S=FILE     M=MODULE  R=PROJECT
+Track 4: Fader=room       Knob=decay      S=DIRECT   M=STUDIO  R=OPEN
 """
 
 import json
@@ -40,21 +42,21 @@ DEFAULT_CONFIG = {
         # Track 2
         "certainty":  {"type": "cc_continuous",    "control": 1},   # Fader 2
         "risk":       {"type": "cc_continuous",    "control": 17},  # Knob 2
-        "OPTIONS":    {"type": "cc_stance_button", "control": 33},  # S2
-        "GUESS":      {"type": "cc_stance_button", "control": 49},  # M2
+        "LIST":       {"type": "cc_stance_button", "control": 33},  # S2
+        "GUIDE":      {"type": "cc_stance_button", "control": 49},  # M2
         "DECIDE":     {"type": "cc_stance_button", "control": 65},  # R2
         # Track 3
         "scope":      {"type": "cc_continuous",    "control": 2},   # Fader 3
         "bandwidth":  {"type": "cc_continuous",    "control": 18},  # Knob 3
-        "HIGHPASS":   {"type": "cc_filter_button", "control": 34},  # S3
-        "PARAMETRIC": {"type": "cc_filter_button", "control": 50},  # M3
-        "LOWPASS":    {"type": "cc_filter_button", "control": 66},  # R3
+        "FILE":       {"type": "cc_filter_button", "control": 34},  # S3
+        "MODULE":     {"type": "cc_filter_button", "control": 50},  # M3
+        "PROJECT":    {"type": "cc_filter_button", "control": 66},  # R3
         # Track 4
         "room":       {"type": "cc_continuous",    "control": 3},   # Fader 4
         "decay":      {"type": "cc_continuous",    "control": 19},  # Knob 4
-        "ANECHOIC":   {"type": "cc_voice_button",  "control": 35},  # S4
+        "DIRECT":     {"type": "cc_voice_button",  "control": 35},  # S4
         "STUDIO":     {"type": "cc_voice_button",  "control": 51},  # M4
-        "HALL":       {"type": "cc_voice_button",  "control": 67},  # R4
+        "OPEN":       {"type": "cc_voice_button",  "control": 67},  # R4
     },
 }
 
@@ -177,9 +179,9 @@ def run_bridge(cfg: dict) -> None:
     # Build fast lookup tables
     cc_continuous     = {}  # control → field name
     cc_mode_buttons   = {}  # control → EXPLORE | FIX | BUILD
-    cc_stance_buttons = {}  # control → OPTIONS | GUESS | DECIDE
-    cc_filter_buttons = {}  # control → HIGHPASS | PARAMETRIC | LOWPASS
-    cc_voice_buttons  = {}  # control → ANECHOIC | STUDIO | HALL
+    cc_stance_buttons = {}  # control → LIST | GUIDE | DECIDE
+    cc_filter_buttons = {}  # control → FILE | MODULE | PROJECT
+    cc_voice_buttons  = {}  # control → DIRECT | STUDIO | OPEN
 
     for key, val in mapping.items():
         t = val["type"]
