@@ -292,11 +292,6 @@ body{background:#EDF4EF;font-family:'Inter',sans-serif;color:#0F2419;height:100v
 .hero-left{position:absolute;left:24px;top:50%;transform:translateY(-52%);pointer-events:none;z-index:1;}
 .hero-brand{font-family:'Abril Fatface',serif;font-size:68px;color:#1A0A2E;line-height:1;}
 .hero-tagline{font-size:7px;font-weight:600;letter-spacing:.3em;color:rgba(26,10,46,.36);text-transform:uppercase;margin-top:3px;}
-@keyframes spin-cw  {to{transform:rotate( 360deg);}}
-@keyframes spin-ccw {to{transform:rotate(-360deg);}}
-.gear-cw  {animation:spin-cw  12s linear infinite;transform-origin:0 0;}
-.gear-ccw {animation:spin-ccw  8s linear infinite;transform-origin:0 0;}
-.gear-sm  {animation:spin-cw   5s linear infinite;transform-origin:0 0;}
 
 /* MAIN SPLIT */
 .main{flex:1;display:flex;overflow:hidden;min-height:0;}
@@ -434,86 +429,119 @@ body{background:#EDF4EF;font-family:'Inter',sans-serif;color:#0F2419;height:100v
       </linearGradient>
     </defs>
     <rect width="1200" height="112" fill="url(#sky)"/>
-    <g transform="translate(572,50)"><g class="gear-cw">
-      <circle r="28" fill="#1A0A2E"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(45)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(90)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(135)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(180)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(225)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(270)"/>
-      <rect x="-5.5" y="-37" width="11" height="11" rx="2" fill="#1A0A2E" transform="rotate(315)"/>
-      <circle r="10" fill="#FFE033"/><circle r="3" fill="#1A0A2E"/>
-    </g></g>
-    <g transform="translate(617,70)"><g class="gear-ccw">
-      <circle r="19" fill="#1A0A2E"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E" transform="rotate(60)"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E" transform="rotate(120)"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E" transform="rotate(180)"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E" transform="rotate(240)"/>
-      <rect x="-4.5" y="-26" width="9" height="8" rx="2" fill="#1A0A2E" transform="rotate(300)"/>
-      <circle r="7" fill="#FFE033"/><circle r="2.5" fill="#1A0A2E"/>
-    </g></g>
-    <g transform="translate(649,85)"><g class="gear-sm">
-      <circle r="12" fill="#1A0A2E"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E" transform="rotate(60)"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E" transform="rotate(120)"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E" transform="rotate(180)"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E" transform="rotate(240)"/>
-      <rect x="-3.5" y="-17" width="7" height="6" rx="2" fill="#1A0A2E" transform="rotate(300)"/>
-      <circle r="4" fill="#FFE033"/><circle r="1.5" fill="#1A0A2E"/>
-    </g></g>
-    <g transform="translate(500,103)" stroke="#1A0A2E" stroke-linecap="round" fill="none">
-      <circle cx="0" cy="-24" r="6" fill="#1A0A2E" stroke="none"/>
-      <line x1="0" y1="-18" x2="0" y2="-5" stroke-width="2.5"/>
-      <line x1="0" y1="-13" x2="-9" y2="-6" stroke-width="2"/>
-      <line x1="0" y1="-13" x2="14" y2="-30" stroke-width="2"/>
-      <line x1="0" y1="-5" x2="-6" y2="7" stroke-width="2"/>
-      <line x1="0" y1="-5" x2="6" y2="7" stroke-width="2"/>
+
+    <!-- ── OSCILLOSCOPE SCREEN ── -->
+    <!-- outer bezel -->
+    <rect x="348" y="12" width="392" height="76" rx="6" fill="#071410"/>
+    <!-- inner screen -->
+    <rect x="353" y="17" width="382" height="66" rx="3" fill="#0B1E15"/>
+    <!-- grid horizontals -->
+    <line x1="353" y1="39" x2="735" y2="39" stroke="#183325" stroke-width="0.7"/>
+    <line x1="353" y1="50" x2="735" y2="50" stroke="#183325" stroke-width="0.7"/>
+    <line x1="353" y1="61" x2="735" y2="61" stroke="#183325" stroke-width="0.7"/>
+    <!-- grid verticals -->
+    <line x1="448" y1="17" x2="448" y2="83" stroke="#183325" stroke-width="0.7"/>
+    <line x1="543" y1="17" x2="543" y2="83" stroke="#183325" stroke-width="0.7"/>
+    <line x1="638" y1="17" x2="638" y2="83" stroke="#183325" stroke-width="0.7"/>
+
+    <!-- center divider — the before / after line -->
+    <line x1="543" y1="12" x2="543" y2="88" stroke="#3A6A4A" stroke-width="1.2" stroke-dasharray="3,2.5"/>
+
+    <!-- BEFORE: chaotic / untuned (amber) -->
+    <path d="M357,50 L362,36 L367,63 L372,31 L377,67 L382,40 L387,61 L392,27 L397,68 L402,38 L407,58 L412,29 L417,65 L422,41 L427,59 L432,26 L437,64 L441,43 L447,50 L543,50"
+          stroke="#F59E0B" stroke-width="1.6" fill="none" opacity="0.9" stroke-linejoin="round"/>
+    <!-- glow behind chaotic line -->
+    <path d="M357,50 L362,36 L367,63 L372,31 L377,67 L382,40 L387,61 L392,27 L397,68 L402,38 L407,58 L412,29 L417,65 L422,41 L427,59 L432,26 L437,64 L441,43 L447,50 L543,50"
+          stroke="#F59E0B" stroke-width="5" fill="none" opacity="0.12" stroke-linejoin="round"/>
+
+    <!-- AFTER: clean sine (mint) -->
+    <!-- glow layer -->
+    <path d="M543,50 C556,50 560,22 573,22 C586,22 590,78 603,78 C616,78 620,22 633,22 C646,22 650,78 663,78 C676,78 680,22 693,22 C706,22 710,50 731,50"
+          stroke="#6EE7B7" stroke-width="6" fill="none" opacity="0.15"/>
+    <!-- main line -->
+    <path d="M543,50 C556,50 560,22 573,22 C586,22 590,78 603,78 C616,78 620,22 633,22 C646,22 650,78 663,78 C676,78 680,22 693,22 C706,22 710,50 731,50"
+          stroke="#6EE7B7" stroke-width="2.2" fill="none"/>
+
+    <!-- tiny labels inside screen -->
+    <text x="448" y="90" font-family="monospace" font-size="5.5" fill="#F59E0B" text-anchor="middle" opacity="0.65">UNTUNED</text>
+    <text x="638" y="90" font-family="monospace" font-size="5.5" fill="#6EE7B7" text-anchor="middle" opacity="0.75">CONTROLLED</text>
+
+    <!-- corner screws -->
+    <circle cx="356" cy="20" r="2.2" fill="#1E3D28"/>
+    <circle cx="732" cy="20" r="2.2" fill="#1E3D28"/>
+    <circle cx="356" cy="80" r="2.2" fill="#1E3D28"/>
+    <circle cx="732" cy="80" r="2.2" fill="#1E3D28"/>
+
+    <!-- bezel frame -->
+    <rect x="348" y="12" width="392" height="76" rx="6" fill="none" stroke="#2A5A3A" stroke-width="2"/>
+
+    <!-- knob below-left of screen (the operator's hand on the control) -->
+    <circle cx="368" cy="96" r="8" fill="#1A0A2E"/>
+    <line x1="368" y1="88" x2="368" y2="95" stroke="#FFE033" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="368" cy="96" r="8" fill="none" stroke="#2A5A3A" stroke-width="1"/>
+
+    <!-- operator figure reaching toward screen -->
+    <g transform="translate(314,103)" stroke="#1A0A2E" stroke-linecap="round" fill="none">
+      <circle cx="0" cy="-22" r="5.5" fill="#1A0A2E" stroke="none"/>
+      <line x1="0" y1="-16" x2="0" y2="-4" stroke-width="2.5"/>
+      <line x1="0" y1="-10" x2="-8" y2="-3" stroke-width="2"/>
+      <line x1="0" y1="-10" x2="50" y2="-16" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="-5" y2="9" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="5" y2="9" stroke-width="2"/>
     </g>
-    <rect x="668" y="70" width="5" height="42" fill="#1A0A2E"/>
-    <circle cx="670" cy="60" r="12" fill="#1A0A2E"/>
-    <circle cx="670" cy="47" r="8" fill="#1A0A2E"/>
-    <circle cx="670" cy="38" r="5" fill="#1A0A2E"/>
-    <rect x="690" y="74" width="48" height="38" fill="#1A0A2E"/>
-    <rect x="694" y="60" width="10" height="16" fill="#1A0A2E"/>
-    <rect x="716" y="60" width="10" height="16" fill="#1A0A2E"/>
-    <polygon points="744,112 744,14 757,2 770,14 770,112" fill="#1A0A2E"/>
-    <circle cx="757" cy="26" r="6" fill="#FFE033" opacity="0.45"/>
-    <rect x="775" y="46" width="64" height="66" fill="#1A0A2E"/>
-    <ellipse cx="807" cy="46" rx="32" ry="14" fill="#1A0A2E"/>
-    <circle cx="807" cy="34" r="7" fill="#FFE033" opacity="0.4"/>
-    <polygon points="845,112 845,7 857,0 869,7 869,112" fill="#1A0A2E"/>
-    <circle cx="857" cy="20" r="6" fill="#FFE033" opacity="0.45"/>
-    <rect x="874" y="52" width="48" height="60" fill="#1A0A2E"/>
-    <rect x="878" y="38" width="11" height="16" fill="#1A0A2E"/>
-    <rect x="896" y="38" width="11" height="16" fill="#1A0A2E"/>
-    <rect x="926" y="66" width="42" height="46" fill="#1A0A2E"/>
-    <rect x="972" y="80" width="38" height="32" fill="#1A0A2E"/>
-    <polygon points="926,66 947,51 968,66" fill="#1A0A2E"/>
-    <rect x="1014" y="76" width="186" height="36" fill="#1A0A2E"/>
-    <g transform="translate(1105,22)">
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(45)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(90)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(135)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(180)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(225)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(270)"/>
-      <polygon points="0,-36 -5,-25 5,-25" fill="#FFB300" transform="rotate(315)"/>
-      <circle r="20" fill="#FFB300"/>
+
+    <!-- ── TIM BURTON CITY (right of screen) ── -->
+    <!-- topiary tree -->
+    <rect x="748" y="70" width="4" height="42" fill="#1A0A2E"/>
+    <circle cx="750" cy="60" r="11" fill="#1A0A2E"/>
+    <circle cx="750" cy="48" r="7.5" fill="#1A0A2E"/>
+    <circle cx="750" cy="39" r="5" fill="#1A0A2E"/>
+
+    <rect x="770" y="74" width="46" height="38" fill="#1A0A2E"/>
+    <rect x="774" y="60" width="10" height="16" fill="#1A0A2E"/>
+    <rect x="795" y="60" width="10" height="16" fill="#1A0A2E"/>
+
+    <polygon points="822,112 822,12 835,1 848,12 848,112" fill="#1A0A2E"/>
+    <circle cx="835" cy="24" r="6" fill="#FFE033" opacity="0.45"/>
+
+    <rect x="853" y="46" width="60" height="66" fill="#1A0A2E"/>
+    <ellipse cx="883" cy="46" rx="30" ry="13" fill="#1A0A2E"/>
+    <circle cx="883" cy="34" r="7" fill="#FFE033" opacity="0.38"/>
+
+    <polygon points="919,112 919,7 931,0 943,7 943,112" fill="#1A0A2E"/>
+    <circle cx="931" cy="20" r="5.5" fill="#FFE033" opacity="0.45"/>
+
+    <rect x="947" y="54" width="46" height="58" fill="#1A0A2E"/>
+    <rect x="951" y="40" width="10" height="16" fill="#1A0A2E"/>
+    <rect x="969" y="40" width="10" height="16" fill="#1A0A2E"/>
+
+    <rect x="997" y="68" width="38" height="44" fill="#1A0A2E"/>
+    <rect x="1039" y="76" width="36" height="36" fill="#1A0A2E"/>
+    <polygon points="997,68 1016,52 1035,68" fill="#1A0A2E"/>
+    <rect x="1079" y="74" width="121" height="38" fill="#1A0A2E"/>
+
+    <!-- ── SUN top right ── -->
+    <g transform="translate(1110,24)">
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(45)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(90)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(135)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(180)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(225)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(270)"/>
+      <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(315)"/>
+      <circle r="21" fill="#FFB300"/>
       <circle cx="-5.5" cy="-2" r="2.8" fill="#1A0A2E"/>
       <circle cx=" 5.5" cy="-2" r="2.8" fill="#1A0A2E"/>
       <path d="M-6,5 Q0,13 6,5" stroke="#1A0A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
     </g>
+
+    <!-- ── GROUND WAVE ── -->
     <path d="M0,105 Q250,93 450,105 Q650,117 850,101 Q1050,87 1200,105 L1200,112 L0,112 Z" fill="#1A0A2E"/>
   </svg>
   <div class="hero-left">
     <div class="hero-brand">control</div>
-    <div class="hero-tagline">you hold the dial</div>
+    <div class="hero-tagline">dial it in.</div>
   </div>
 </div>
 
