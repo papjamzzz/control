@@ -11,6 +11,7 @@ import json
 import sys
 import time
 import argparse
+import subprocess
 from pathlib import Path
 
 try:
@@ -18,8 +19,14 @@ try:
 except ImportError:
     sys.exit("[nano] mido not installed. Run: pip3 install mido python-rtmidi")
 
-STATE_FILE  = Path.home() / ".streamfader" / "state.json"
-CONFIG_FILE = Path.home() / ".streamfader" / "nano_config.json"
+STATE_FILE     = Path.home() / ".streamfader" / "state.json"
+CONFIG_FILE    = Path.home() / ".streamfader" / "nano_config.json"
+PID_FILE       = Path.home() / ".streamfader" / "ctrl.pid"
+LAST_TASK_FILE = Path.home() / ".streamfader" / "last_task.txt"
+
+# nanoKONTROL2 transport CC numbers (Scene 1 defaults)
+CC_PLAY = 41
+CC_STOP = 42
 
 # ── Profiles ──────────────────────────────────────────────────────────────────
 
@@ -157,6 +164,40 @@ def clear_leds(out_port, led_map: dict) -> None:
             out_port.send(mido.Message("control_change", channel=0, control=control, value=0))
 
 
+# ── Transport helpers ─────────────────────────────────────────────────────────
+
+def kill_running() -> bool:
+    """Kill the current ctrl run subprocess via its saved PID. Returns True if killed."""
+    import os, signal
+    try:
+        pid = int(PID_FILE.read_text().strip())
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+        PID_FILE.unlink(missing_ok=True)
+        return True
+    except (FileNotFoundError, ProcessLookupError, ValueError, OSError):
+        return False
+
+
+def launch_run(task: str) -> None:
+    """Spawn ctrl run <task> as a background process."""
+    ctrl = Path(__file__).resolve().parent / "ctrl"
+    proc = subprocess.Popen(
+        [sys.executable, str(ctrl), "run", task],
+        start_new_session=True,
+    )
+    try:
+        PID_FILE.write_text(str(proc.pid))
+    except Exception:
+        pass
+
+
+def read_last_task() -> str:
+    try:
+        return LAST_TASK_FILE.read_text().strip()
+    except FileNotFoundError:
+        return ""
+
+
 # ── Bridge ────────────────────────────────────────────────────────────────────
 
 def run_bridge(cfg: dict) -> None:
@@ -269,11 +310,30 @@ def run_bridge(cfg: dict) -> None:
                         event   = f"filter={state['filter']}"
                         changed = True
 
-                    # Voice button (room/reverb)
+                    # Voice button
                     elif msg.control in cc_voice_buttons and msg.value > 0:
                         state["voice"] = cc_voice_buttons[msg.control]
                         event   = f"voice={state['voice']}"
                         changed = True
+
+                    # ── TRANSPORT ────────────────────────────────────────
+                    # STOP — kill current ctrl run
+                    elif msg.control == CC_STOP and msg.value > 0:
+                        killed = kill_running()
+                        event  = "■ STOP — killed" if killed else "■ STOP — idle"
+                        render_state(state, event)
+
+                    # PLAY — re-run last task with current state
+                    elif msg.control == CC_PLAY and msg.value > 0:
+                        task = read_last_task()
+                        if task:
+                            kill_running()          # stop anything already running
+                            launch_run(task)
+                            lbl = (task[:28] + "…") if len(task) > 28 else task
+                            event = f"▶ {lbl}"
+                        else:
+                            event = "▶ PLAY — no task queued"
+                        render_state(state, event)
 
                 if changed:
                     write_state(state)

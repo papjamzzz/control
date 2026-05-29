@@ -7,9 +7,11 @@ import shutil
 import subprocess
 from pathlib import Path
 
-STATE_FILE = Path.home() / ".streamfader" / "state.json"
-VALID_MODES = {"EXPLORE", "FIX", "BUILD"}
-DEFAULT_STATE = {"mode": "BUILD", "intensity": 0.5, "depth": 0.5}
+STATE_FILE     = Path.home() / ".streamfader" / "state.json"
+PID_FILE       = Path.home() / ".streamfader" / "ctrl.pid"
+LAST_TASK_FILE = Path.home() / ".streamfader" / "last_task.txt"
+VALID_MODES    = {"EXPLORE", "FIX", "BUILD"}
+DEFAULT_STATE  = {"mode": "BUILD", "intensity": 0.5, "depth": 0.5}
 
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -263,12 +265,29 @@ def cmd_run(task: str) -> None:
     state = load_state()
     print_header(state)
     cmd = build_cmd(state, task)
+    # Save task so PLAY button can replay it
     try:
-        result = subprocess.run(cmd)
-        sys.exit(result.returncode)
+        LAST_TASK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        LAST_TASK_FILE.write_text(task)
+    except Exception:
+        pass
+    try:
+        proc = subprocess.Popen(cmd, start_new_session=True)
+        try:
+            PID_FILE.write_text(str(proc.pid))
+        except Exception:
+            pass
+        proc.wait()
+        sys.exit(proc.returncode)
     except KeyboardInterrupt:
+        proc.terminate()
         print("\n[ctrl] Interrupted.")
         sys.exit(130)
+    finally:
+        try:
+            PID_FILE.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 def cmd_state() -> None:
