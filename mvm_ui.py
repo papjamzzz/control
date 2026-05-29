@@ -405,9 +405,35 @@ body{background:#D6EDE0;font-family:'Inter',sans-serif;color:#0A1F12;height:100v
 .faq-s-title{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#064E3B;margin-bottom:8px;}
 .faq-p{font-size:13px;line-height:1.7;color:#0A3D20;margin-bottom:8px;}
 .faq-track{margin-bottom:9px;padding:10px 13px;background:#EAF6EE;border-radius:5px;border-left:4px solid #064E3B;}
-.faq-track-name{font-size:9.5px;font-weight:700;color:#064E3B;margin-bottom:2px;}
-.faq-track-desc{font-size:10.5px;color:rgba(6,20,13,.55);line-height:1.55;}
-.faq-code{font-family:'Courier New',monospace;font-size:11px;background:#F0F7F2;padding:7px 11px;border-radius:4px;color:#064E3B;margin:5px 0;display:block;}
+.faq-track-name{font-size:11px;font-weight:800;color:#064E3B;margin-bottom:3px;}
+.faq-track-desc{font-size:12px;color:#1B5E38;line-height:1.6;}
+.faq-code{font-family:'Courier New',monospace;font-size:12px;background:#EAF6EE;padding:8px 12px;border-radius:4px;color:#064E3B;margin:6px 0;display:block;border:1px solid #A8D4B8;}
+
+/* HISTORY LOG */
+.history-hd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.clear-btn{height:24px;padding:0 10px;border-radius:3px;border:1.5px solid #3A8A5A;background:transparent;color:#1B5E38;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .1s;}
+.clear-btn:hover{background:#B91C1C;color:#fff;border-color:#B91C1C;}
+.hc{background:#fff;border:1.5px solid #8FC4A4;border-radius:6px;padding:9px 12px;margin-bottom:7px;cursor:pointer;transition:border-color .1s;}
+.hc:hover{border-color:#064E3B;}
+.hc.open{border-color:#064E3B;border-width:2px;}
+.hc-top{display:flex;gap:8px;align-items:center;margin-bottom:4px;}
+.hc-time{font-size:11px;color:#1B5E38;font-variant-numeric:tabular-nums;font-weight:600;}
+.hc-mode{font-size:11px;font-weight:800;padding:2px 7px;border-radius:3px;background:#064E3B;color:#fff;letter-spacing:.08em;}
+.hc-peek{font-size:11px;color:#1B5E38;font-weight:600;margin-left:auto;font-variant-numeric:tabular-nums;}
+.hc-chevron{font-size:10px;color:#1B5E38;transition:transform .15s;flex-shrink:0;}
+.hc.open .hc-chevron{transform:rotate(180deg);}
+.hc-task{font-size:13px;font-weight:700;color:#0A1F12;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hc-preview{font-size:11px;color:#1B5E38;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.hc-body{display:none;margin-top:10px;padding-top:10px;border-top:1.5px solid #A8D4B8;}
+.hc.open .hc-body{display:block;}
+.hc-state-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;}
+.hc-si{background:#EAF6EE;border-radius:4px;padding:5px 7px;border:1px solid #A8D4B8;}
+.hc-si-lbl{font-size:9px;color:#1B5E38;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.hc-si-val{font-size:12px;color:#0A3D20;font-weight:800;margin-top:1px;font-variant-numeric:tabular-nums;}
+.hc-full{font-size:12px;line-height:1.65;color:#0A1F12;white-space:pre-wrap;background:#F5FBF7;border:1.5px solid #A8D4B8;border-radius:5px;padding:10px 12px;max-height:220px;overflow-y:auto;margin-bottom:8px;font-family:'Inter',sans-serif;}
+.hc-actions{display:flex;gap:7px;justify-content:flex-end;}
+.hc-copy{height:28px;padding:0 14px;border-radius:4px;border:1.5px solid #3A8A5A;background:#EAF6EE;color:#0A3D20;font-size:11px;font-weight:700;cursor:pointer;transition:all .1s;letter-spacing:.06em;text-transform:uppercase;}
+.hc-copy:hover{background:#064E3B;color:#fff;border-color:#064E3B;}
 </style>
 </head>
 <body>
@@ -684,7 +710,10 @@ body{background:#D6EDE0;font-family:'Inter',sans-serif;color:#0A1F12;height:100v
     </div>
 
     <div class="history-wrap">
-      <div class="section-hd">RUN HISTORY</div>
+      <div class="history-hd-row">
+        <div class="section-hd">RUN LOG</div>
+        <button class="clear-btn" onclick="clearHistory()">Clear</button>
+      </div>
       <div id="history"><div class="history-empty">no runs yet — use <code>ctrl run</code> in terminal, or preview above</div></div>
     </div>
   </div>
@@ -887,21 +916,79 @@ Object.entries(KNOBS).forEach(([field, ids]) => {
   bindDrag(knobEl, getV, move, drop);
 });
 
-// ── RUN HISTORY ──────────────────────────────────────────────────────────────
+// ── RUN LOG ──────────────────────────────────────────────────────────────────
 const history = [];
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function saveHistory() {
+  try { localStorage.setItem('ctrl_log', JSON.stringify(history.slice(0,30))); } catch(_) {}
+}
+function loadHistory() {
+  try {
+    const s = localStorage.getItem('ctrl_log');
+    if (s) { JSON.parse(s).forEach(r => history.push(r)); renderHistory(); }
+  } catch(_) {}
+}
+function clearHistory() {
+  if (!confirm('Clear the run log?')) return;
+  history.length = 0;
+  try { localStorage.removeItem('ctrl_log'); } catch(_) {}
+  renderHistory();
+}
+function toggleCard(i) {
+  const el = document.getElementById('hc-'+i);
+  if (el) el.classList.toggle('open');
+}
+function copyResp(i, e) {
+  e.stopPropagation();
+  const r = history[i]; if (!r) return;
+  navigator.clipboard.writeText('TASK: ' + r.task + '\n\nSTATE:\n' +
+    'MODE=' + r.mode + ' STANCE=' + r.stance + ' FILTER=' + r.filter + ' VOICE=' + r.voice + '\n' +
+    'I=' + r.intensity + ' D=' + r.depth + ' C=' + r.certainty + ' R=' + r.risk +
+    ' SCOPE=' + r.scope + ' BW=' + r.bandwidth + ' ROOM=' + r.room + ' DECAY=' + r.decay +
+    '\n\nRESPONSE:\n' + r.resp
+  ).then(() => {
+    const btn = e.target; btn.textContent='Copied!';
+    setTimeout(() => btn.textContent='Copy', 1500);
+  });
+}
+
 function renderHistory() {
   const el = document.getElementById('history');
-  if (!history.length) { el.innerHTML='<div class="history-empty">no runs yet — use <code>ctrl run</code> in terminal, or preview above</div>'; return; }
-  el.innerHTML = history.map(r=>`
-    <div class="hc">
+  if (!history.length) {
+    el.innerHTML = '<div class="history-empty">no runs yet — use <code>ctrl run</code> in terminal, or preview above</div>';
+    return;
+  }
+  el.innerHTML = history.map((r,i) => `
+    <div class="hc" id="hc-${i}" onclick="toggleCard(${i})">
       <div class="hc-top">
-        <span class="hc-time">${r.t}</span>
+        <span class="hc-time">${esc(r.t)}</span>
         <span class="hc-mode">${esc(r.mode)}</span>
-        <span class="hc-state">I${r.i} D${r.d} C${r.c} R${r.r}</span>
+        <span class="hc-peek">I${r.intensity} D${r.depth} C${r.certainty} R${r.risk}</span>
+        <span class="hc-chevron">▼</span>
       </div>
       <div class="hc-task">${esc(r.task)}</div>
-      <div class="hc-resp">${esc(r.resp)}</div>
+      <div class="hc-preview">${esc(r.resp.slice(0,140))}${r.resp.length>140?'…':''}</div>
+      <div class="hc-body">
+        <div class="hc-state-grid">
+          <div class="hc-si"><div class="hc-si-lbl">MODE</div><div class="hc-si-val">${esc(r.mode)}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">STANCE</div><div class="hc-si-val">${esc(r.stance)}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">FILTER</div><div class="hc-si-val">${esc(r.filter)}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">VOICE</div><div class="hc-si-val">${esc(r.voice)}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">INTENSITY</div><div class="hc-si-val">${r.intensity}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">DEPTH</div><div class="hc-si-val">${r.depth}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">CERTAINTY</div><div class="hc-si-val">${r.certainty}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">RISK</div><div class="hc-si-val">${r.risk}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">SCOPE</div><div class="hc-si-val">${r.scope}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">BANDWIDTH</div><div class="hc-si-val">${r.bandwidth}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">ROOM</div><div class="hc-si-val">${r.room}</div></div>
+          <div class="hc-si"><div class="hc-si-lbl">DECAY</div><div class="hc-si-val">${r.decay}</div></div>
+        </div>
+        <div class="hc-full">${esc(r.resp)}</div>
+        <div class="hc-actions">
+          <button class="hc-copy" onclick="copyResp(${i},event)">Copy</button>
+        </div>
+      </div>
     </div>`).join('');
 }
 
@@ -918,11 +1005,18 @@ async function runTask() {
   respBox.textContent = ''; respWrap.classList.add('open');
   let full = '';
   const snap = {
-    mode: document.getElementById('sb-mode').textContent,
-    i: (parseFloat(document.getElementById('mv-intensity').textContent)||0).toFixed(2),
-    d: (parseFloat(document.getElementById('mv-depth').textContent)||0).toFixed(2),
-    c: (parseFloat(document.getElementById('mv-certainty').textContent)||0).toFixed(2),
-    r: (parseFloat(document.getElementById('mv-risk').textContent)||0).toFixed(2),
+    mode:      document.getElementById('sb-mode').textContent.trim(),
+    stance:    document.getElementById('sb-stance').textContent.trim(),
+    filter:    document.getElementById('sb-filter').textContent.trim(),
+    voice:     document.getElementById('sb-voice').textContent.trim(),
+    intensity: document.getElementById('mv-intensity').textContent.trim(),
+    depth:     document.getElementById('mv-depth').textContent.trim(),
+    certainty: document.getElementById('mv-certainty').textContent.trim(),
+    risk:      document.getElementById('mv-risk').textContent.trim(),
+    scope:     document.getElementById('mv-scope').textContent.trim(),
+    bandwidth: document.getElementById('mv-bandwidth').textContent.trim(),
+    room:      document.getElementById('mv-room').textContent.trim(),
+    decay:     document.getElementById('mv-decay').textContent.trim(),
   };
   try {
     const res = await fetch('/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task})});
@@ -939,8 +1033,9 @@ async function runTask() {
         if(d.done)  {
           runBtn.disabled=false; runBtn.textContent='Run';
           if(full) {
-            history.unshift({t:new Date().toLocaleTimeString(),task,resp:full,...snap});
-            if(history.length>8) history.pop();
+            history.unshift({t:new Date().toLocaleTimeString(), task, resp:full, ...snap});
+            if(history.length>30) history.pop();
+            saveHistory();
             renderHistory();
           }
         }
@@ -952,6 +1047,7 @@ async function runTask() {
 }
 runBtn.addEventListener('click', runTask);
 taskInput.addEventListener('keydown', e => { if((e.metaKey||e.ctrlKey)&&e.key==='Enter') runTask(); });
+loadHistory();
 
 // ── FAQ ──────────────────────────────────────────────────────────────────────
 function openFaq()  { document.getElementById('faq-overlay').classList.add('open'); document.getElementById('faq-panel').classList.add('open'); }
