@@ -21,14 +21,14 @@ def load_state() -> dict:
         mode = raw.get("mode", "")
         if mode not in VALID_MODES:
             sys.exit(f"[ctrl] Invalid mode {mode!r}. Must be one of: {', '.join(VALID_MODES)}")
-        stance = raw.get("stance", "GUESS")
-        if stance not in ("OPTIONS", "GUESS", "DECIDE"):
-            stance = "GUESS"
-        filter_ = raw.get("filter", "PARAMETRIC")
-        if filter_ not in ("HIGHPASS", "PARAMETRIC", "LOWPASS"):
-            filter_ = "PARAMETRIC"
+        stance = raw.get("stance", "GUIDE")
+        if stance not in ("LIST", "GUIDE", "DECIDE"):
+            stance = "GUIDE"
+        filter_ = raw.get("filter", "MODULE")
+        if filter_ not in ("FILE", "MODULE", "PROJECT"):
+            filter_ = "MODULE"
         voice = raw.get("voice", "STUDIO")
-        if voice not in ("DIRECT", "STUDIO", "HALL"):
+        if voice not in ("DIRECT", "STUDIO", "OPEN"):
             voice = "STUDIO"
         return {
             "mode":      mode,
@@ -128,7 +128,7 @@ def build_system_prompt(state: dict) -> str:
     # Track 2 — Confidence
     certainty = state.get("certainty", 0.5)
     risk      = state.get("risk",      0.5)
-    stance    = state.get("stance",    "GUESS")
+    stance    = state.get("stance",    "GUIDE")
 
     if certainty >= 0.7:
         certainty_rule = "CERTAINTY: HIGH — commit to one solution, do not present alternatives."
@@ -144,17 +144,17 @@ def build_system_prompt(state: dict) -> str:
     else:
         risk_rule = "RISK: LOW — stay close to existing patterns, minimal disruption."
 
-    if stance == "OPTIONS":
-        stance_rule = "STANCE: OPTIONS — present alternatives only, do not implement anything."
+    if stance == "LIST":
+        stance_rule = "STANCE: LIST — present alternatives only, do not implement anything."
     elif stance == "DECIDE":
         stance_rule = "STANCE: DECIDE — pick one approach and implement it, zero explanation of alternatives."
     else:
-        stance_rule = "STANCE: GUESS — give your best recommendation with brief reasoning, then implement."
+        stance_rule = "STANCE: GUIDE — give your best recommendation with brief reasoning, then implement."
 
-    # Track 3 — EQ / Scope
+    # Track 3 — Scope
     scope     = state.get("scope",     0.5)
     bandwidth = state.get("bandwidth", 0.5)
-    filter_   = state.get("filter",    "PARAMETRIC")
+    filter_   = state.get("filter",    "MODULE")
 
     if scope >= 0.7:
         scope_rule = "SCOPE: WIDE — consider the full codebase, pull in all related context."
@@ -170,14 +170,14 @@ def build_system_prompt(state: dict) -> str:
     else:
         bandwidth_rule = "BANDWIDTH: NARROW — surgical precision, touch nothing adjacent."
 
-    if filter_ == "HIGHPASS":
-        filter_rule = "FILTER: HIGHPASS — cut everything below this file, strict local scope."
-    elif filter_ == "LOWPASS":
-        filter_rule = "FILTER: LOWPASS — full spectrum allowed, global context welcome."
+    if filter_ == "FILE":
+        filter_rule = "FILTER: FILE — strict local scope, this file only, no cross-module context."
+    elif filter_ == "PROJECT":
+        filter_rule = "FILTER: PROJECT — full project scope allowed, global context welcome."
     else:
-        filter_rule = "FILTER: PARAMETRIC — shaped band around the problem, selective context."
+        filter_rule = "FILTER: MODULE — shaped band around the module, selective context."
 
-    # Track 4 — Room / Voice
+    # Track 4 — Voice
     room  = state.get("room",  0.3)
     decay = state.get("decay", 0.3)
     voice = state.get("voice", "STUDIO")
@@ -198,8 +198,8 @@ def build_system_prompt(state: dict) -> str:
 
     if voice == "DIRECT":
         voice_rule = "VOICE: DIRECT — dead room, output only, zero commentary or preamble."
-    elif voice == "HALL":
-        voice_rule = "VOICE: HALL — full resonance, collaborative, thinks out loud with you."
+    elif voice == "OPEN":
+        voice_rule = "VOICE: OPEN — full resonance, collaborative, thinks out loud with you."
     else:
         voice_rule = "VOICE: STUDIO — professional, measured, clean response with minimal framing."
 
