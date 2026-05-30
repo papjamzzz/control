@@ -352,13 +352,15 @@ body{
 .hdr-vals{font-size:10px;color:var(--text2);letter-spacing:.06em;font-weight:600;font-variant-numeric:tabular-nums;}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .faq-btn{
-  width:24px;height:24px;border-radius:50%;
-  border:1px solid var(--border2);background:transparent;
-  color:var(--text2);font-size:11px;font-weight:800;
+  width:48px;height:48px;border-radius:50%;
+  border:2px solid var(--accent);background:rgba(0,200,192,.08);
+  color:var(--accent);font-size:22px;font-weight:800;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .15s;line-height:1;
+  box-shadow:0 0 14px rgba(0,200,192,.35),0 0 28px rgba(0,200,192,.18);
+  text-shadow:0 0 10px rgba(0,232,224,.8);
 }
-.faq-btn:hover{background:var(--panel2);color:var(--accent2);border-color:var(--accent);}
+.faq-btn:hover{background:rgba(0,200,192,.18);color:var(--accent2);border-color:var(--accent2);box-shadow:0 0 20px rgba(0,200,192,.55),0 0 40px rgba(0,200,192,.28);}
 
 /* ── HERO ───────────────────────────────────────────────── */
 .hero{position:relative;flex-shrink:0;height:108px;overflow:hidden;border-bottom:1px solid var(--border);box-shadow:0 1px 0 rgba(0,200,192,.12);}
@@ -374,10 +376,10 @@ body{
 .channel-bank{
   width:148px;flex-shrink:0;
   display:flex;flex-direction:column;
-  background:linear-gradient(180deg,#0A1018 0%,#060B12 100%);
+  background:linear-gradient(180deg,#0E1520 0%,#090F1C 100%);
   border-right:1px solid var(--border);
   overflow:hidden;
-  box-shadow:inset -1px 0 0 rgba(0,200,192,.04);
+  box-shadow:inset -1px 0 0 rgba(0,200,192,.05);
 }
 .channel-bank.right{border-right:none;border-left:1px solid var(--border);}
 .bank-hd{
@@ -393,9 +395,9 @@ body{
   flex:1;display:flex;flex-direction:column;align-items:center;
   border-bottom:1px solid var(--border);
   padding:10px 6px 8px;gap:0;min-height:0;overflow:hidden;
-  background:linear-gradient(180deg,#0E1822 0%,#080E18 50%,#060B14 100%);
+  background:linear-gradient(180deg,#141D26 0%,#0D1620 50%,#0A1220 100%);
   position:relative;
-  box-shadow:inset 1px 0 0 rgba(0,196,232,.02),inset -1px 0 0 rgba(0,196,232,.02);
+  box-shadow:inset 1px 0 0 rgba(0,196,232,.03),inset -1px 0 0 rgba(0,196,232,.03);
 }
 .ch:last-child{border-bottom:none;}
 
@@ -406,10 +408,72 @@ body{
 .ch.t3 .ch-accent{background:linear-gradient(90deg,#00A0A8,#00D8E0);box-shadow:0 0 8px rgba(0,200,192,.4);}
 .ch.t4 .ch-accent{background:linear-gradient(90deg,#5020A8,#7844E0);box-shadow:0 0 8px rgba(120,68,224,.4);}
 
+.ch-hdr-row{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;margin-top:6px;margin-bottom:10px;flex-shrink:0;
+}
 .ch-id{
   font-size:8px;font-weight:800;letter-spacing:.2em;
   color:var(--text2);text-transform:uppercase;
-  margin-top:6px;margin-bottom:10px;flex-shrink:0;
+}
+.ch-pwr{
+  width:18px;height:18px;border-radius:2px;
+  border:1px solid rgba(0,196,192,.2);
+  background:rgba(0,196,192,.06);
+  color:rgba(0,196,192,.55);
+  font-size:9px;font-weight:900;letter-spacing:0;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;line-height:1;
+  padding:0;
+}
+.ch-pwr:hover{border-color:rgba(0,196,192,.5);color:rgba(0,196,192,.95);background:rgba(0,196,192,.14);}
+.ch-pwr.off{
+  border-color:rgba(210,60,60,.3);
+  background:rgba(180,30,30,.1);
+  color:rgba(210,80,80,.6);
+  box-shadow:0 0 5px rgba(200,40,40,.12);
+}
+/* dim fader+knob when muted; keep buttons accessible */
+.ch.ch-off .fader-wrap,
+.ch.ch-off .knob-wrap{
+  opacity:.15;
+  pointer-events:none;
+  filter:grayscale(.9) brightness(.5);
+  transition:opacity .2s,filter .2s;
+}
+.ch.ch-off .ch-btns{
+  opacity:.4;
+  filter:grayscale(.6) brightness(.65);
+  transition:opacity .2s,filter .2s;
+}
+/* mute button stays fully live even when channel is off */
+.ch.ch-off .ch-btn.mute-btn{
+  opacity:1;
+  pointer-events:auto;
+  filter:none;
+}
+
+/* MUTE button styling */
+.ch-btn.mute-btn{
+  border-color:rgba(200,70,70,.18);
+  color:rgba(190,90,90,.45);
+}
+.ch-btn.mute-btn:hover{
+  border-color:rgba(210,70,70,.5);
+  color:rgba(220,100,100,.9);
+  background:rgba(160,30,30,.14);
+  text-shadow:none;
+}
+@keyframes mute-pulse{
+  0%,100%{box-shadow:0 0 8px rgba(200,60,60,.3),0 0 18px rgba(200,60,60,.12),0 0 0 1px rgba(200,60,60,.1);}
+  50%    {box-shadow:0 0 16px rgba(200,60,60,.55),0 0 32px rgba(200,60,60,.22),0 0 0 1px rgba(200,60,60,.2);}
+}
+.ch-btn.mute-btn.active{
+  background:linear-gradient(180deg,#1E0808,#120404);
+  color:#D07070;
+  border-color:rgba(200,60,60,.55);
+  text-shadow:0 0 8px rgba(220,70,70,.7),0 0 16px rgba(200,60,60,.4);
+  animation:mute-pulse 2.4s ease-in-out infinite;
 }
 
 /* ── HARDWARE FADER ─────────────────────────────────────── */
@@ -426,10 +490,10 @@ body{
   width:100%;flex:1;min-height:60px;
   display:flex;justify-content:center;align-items:stretch;
 }
-/* tick marks column — left of the groove */
+/* tick marks column */
 .fader-ticks{
-  position:absolute;right:calc(50% + 9px);top:0;bottom:0;
-  width:14px;display:flex;flex-direction:column;
+  position:absolute;right:calc(50% + 7px);top:0;bottom:0;
+  width:16px;display:flex;flex-direction:column;
   justify-content:space-between;padding:0;
   pointer-events:none;
 }
@@ -444,88 +508,146 @@ body{
   font-weight:600;letter-spacing:0;line-height:1;white-space:nowrap;
 }
 
-/* the groove/track */
+/* the groove/track — deep carved console slot */
 .fader-track{
-  width:13px;flex:1;
-  background:linear-gradient(180deg,#010203 0%,#030507 50%,#010203 100%);
-  border:1px solid #0A1620;
-  border-radius:3px;
+  width:10px;flex:1;
+  background:linear-gradient(180deg,#010204 0%,#020406 50%,#010204 100%);
+  border:1px solid #080F18;
+  border-left-color:#050C14;
+  border-right-color:#050C14;
+  border-radius:2px;
   position:relative;
   cursor:ns-resize;
   touch-action:none;
   box-shadow:
-    inset 0 6px 12px rgba(0,0,0,.98),
-    inset 3px 0 5px rgba(0,0,0,.7),
-    inset -3px 0 5px rgba(0,0,0,.7),
-    inset 0 1px 0 rgba(255,255,255,.02),
-    0 0 0 1px rgba(0,196,232,.03);
-}
-/* fill bar inside groove */
-.fader-fill{
-  position:absolute;bottom:0;left:0;right:0;
-  border-radius:2px;
-  background:linear-gradient(0deg,#008898 0%,var(--accent) 40%,var(--accent2) 75%,#A0FEFF 100%);
-  opacity:.7;
-  pointer-events:none;
-  box-shadow:0 0 14px rgba(0,196,232,.65),0 0 4px rgba(0,240,255,1),0 0 28px rgba(0,196,232,.3);
-  transition:box-shadow .1s,opacity .1s;
-}
-.fader-track.dragging .fader-fill{
-  opacity:.9;
-  box-shadow:0 0 22px rgba(0,196,232,.9),0 0 6px rgba(0,250,255,1),0 0 50px rgba(0,196,232,.4),0 0 80px rgba(217,70,239,.2);
-}
-.fader-track.dragging .fader-thumb{
-  box-shadow:
-    0 2px 10px rgba(0,0,0,.95),
-    0 0 18px rgba(0,196,232,.7),
-    0 0 36px rgba(0,196,232,.3),
-    0 0 0 1px rgba(0,220,255,.2),
-    inset 0 2px 0 rgba(255,255,255,.25);
-  border-top-color:#D0EEFF;
+    inset 0 8px 16px rgba(0,0,0,1),
+    inset 2px 0 6px rgba(0,0,0,.85),
+    inset -2px 0 6px rgba(0,0,0,.85),
+    inset 0 1px 0 rgba(255,255,255,.015),
+    0 0 0 1px rgba(0,196,232,.025);
 }
 
-/* the hardware thumb cap */
+/* Level Halo — atmospheric glow pool, light from the thumb cascading down */
+.fader-fill{
+  position:absolute;bottom:0;left:0;right:0;
+  border-radius:1px;
+  background:linear-gradient(0deg,
+    rgba(0,160,152,.06) 0%,
+    rgba(0,190,182,.15) 35%,
+    rgba(0,210,200,.30) 65%,
+    rgba(0,235,222,.50) 85%,
+    rgba(0,255,245,.64) 100%
+  );
+  pointer-events:none;
+  box-shadow:
+    0 0 8px rgba(0,196,192,.28),
+    inset 0 0 5px rgba(0,220,210,.12),
+    0 0 18px rgba(0,180,175,.08);
+  transition:box-shadow .38s ease-out, background .38s ease-out;
+}
+/* T2/T4 channels: glow purple instead of teal */
+.ch.t2 .fader-fill,.ch.t4 .fader-fill{
+  background:linear-gradient(0deg,
+    rgba(80,30,180,.06) 0%,
+    rgba(110,50,210,.15) 35%,
+    rgba(135,75,235,.30) 65%,
+    rgba(158,100,250,.50) 85%,
+    rgba(175,120,255,.64) 100%
+  );
+  box-shadow:
+    0 0 8px rgba(139,92,246,.26),
+    inset 0 0 5px rgba(160,110,255,.10),
+    0 0 18px rgba(139,92,246,.07);
+}
+.fader-track.dragging .fader-fill,
+.fader-track.value-active .fader-fill{
+  background:linear-gradient(0deg,
+    rgba(0,160,152,.10) 0%,
+    rgba(0,195,185,.24) 30%,
+    rgba(0,218,205,.42) 60%,
+    rgba(0,242,228,.66) 82%,
+    rgba(0,255,248,.82) 100%
+  );
+  box-shadow:
+    0 0 14px rgba(0,196,192,.55),
+    inset 0 0 7px rgba(0,230,218,.22),
+    0 0 32px rgba(0,180,175,.18),
+    0 0 55px rgba(217,70,239,.07);
+  transition:box-shadow .04s ease-in, background .04s ease-in;
+}
+.ch.t2 .fader-track.dragging .fader-fill,
+.ch.t2 .fader-track.value-active .fader-fill,
+.ch.t4 .fader-track.dragging .fader-fill,
+.ch.t4 .fader-track.value-active .fader-fill{
+  background:linear-gradient(0deg,
+    rgba(80,30,180,.10) 0%,
+    rgba(115,55,215,.24) 30%,
+    rgba(140,80,240,.42) 60%,
+    rgba(162,105,252,.66) 82%,
+    rgba(180,128,255,.82) 100%
+  );
+  box-shadow:
+    0 0 14px rgba(139,92,246,.55),
+    inset 0 0 7px rgba(165,115,255,.22),
+    0 0 32px rgba(139,92,246,.18),
+    0 0 55px rgba(217,70,239,.10);
+  transition:box-shadow .04s ease-in, background .04s ease-in;
+}
+.fader-track.dragging .fader-thumb,
+.fader-track.value-active .fader-thumb{
+  box-shadow:
+    0 2px 12px rgba(0,0,0,.98),
+    0 0 22px rgba(0,196,232,.65),
+    0 0 44px rgba(0,196,232,.22),
+    0 0 0 1px rgba(0,220,255,.28),
+    inset 0 2px 0 rgba(255,255,255,.35);
+  border-top-color:#F0F8FF;
+  transition:box-shadow .04s ease-in, border-top-color .04s ease-in;
+}
+
+/* the hardware thumb cap — cold chrome console fader */
 .fader-thumb{
   position:absolute;
-  width:38px;height:24px;
+  width:44px;height:28px;
   left:50%;transform:translateX(-50%);
   cursor:ns-resize;z-index:3;touch-action:none;
-  border-radius:4px;
+  border-radius:3px;
   background:linear-gradient(180deg,
-    #D8EEFF 0%,      /* bright specular top */
-    #B0CDE0 6%,      /* shoulder */
-    #4A6880 20%,     /* upper body */
-    #243850 38%,     /* deep shadow */
-    #182840 48%,     /* center groove */
-    #182840 52%,     /* center groove */
-    #243850 62%,     /* deep shadow */
-    #4A6880 80%,     /* lower body */
-    #B0CDE0 94%,     /* shoulder */
-    #D8EEFF 100%     /* bright specular bottom */
+    #EEF6FF 0%,
+    #C8DCEE 4%,
+    #587890 16%,
+    #283E50 34%,
+    #0E1C28 47%,
+    #0A1620 50%,
+    #0E1C28 53%,
+    #283E50 66%,
+    #587890 84%,
+    #C8DCEE 96%,
+    #EEF6FF 100%
   );
-  border:1px solid #081018;
-  border-top-color:#C0DCEE;
-  border-bottom-color:#060C14;
+  border:1px solid #060E18;
+  border-top-color:#D8EEFF;
+  border-bottom-color:#040C14;
   box-shadow:
-    0 3px 10px rgba(0,0,0,.9),
-    0 0 0 1px rgba(0,196,232,.08),
-    inset 0 2px 0 rgba(255,255,255,.18),
-    0 0 8px rgba(0,200,192,.1);
+    0 3px 12px rgba(0,0,0,.95),
+    0 0 0 1px rgba(0,196,232,.10),
+    inset 0 2px 0 rgba(255,255,255,.22),
+    0 0 10px rgba(0,200,192,.10);
 }
-/* grip serrations */
+/* hairline grip serrations */
 .fader-thumb::before,.fader-thumb::after{
   content:'';position:absolute;
-  left:18%;right:18%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(0,0,0,.35) 20%,rgba(0,0,0,.35) 80%,transparent);
+  left:14%;right:14%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.4) 25%,rgba(0,0,0,.4) 75%,transparent);
 }
-.fader-thumb::before{top:calc(50% - 4px);}
-.fader-thumb::after {top:calc(50% + 4px);}
-/* teal center stripe — the signature feature */
+.fader-thumb::before{top:calc(50% - 5px);}
+.fader-thumb::after {top:calc(50% + 5px);}
+/* teal center stripe — the level marker, reads as a position cursor */
 .fader-thumb .thumb-center{
-  position:absolute;left:12%;right:12%;top:50%;
+  position:absolute;left:10%;right:10%;top:50%;
   height:2px;transform:translateY(-50%);
-  background:linear-gradient(90deg,transparent,rgba(0,210,255,.75) 15%,rgba(0,240,255,.95) 50%,rgba(0,210,255,.75) 85%,transparent);
-  box-shadow:0 0 5px rgba(0,200,255,.7),0 0 10px rgba(0,200,255,.3);
+  background:linear-gradient(90deg,transparent,rgba(0,215,255,.82) 12%,rgba(0,250,255,1) 50%,rgba(0,215,255,.82) 88%,transparent);
+  box-shadow:0 0 6px rgba(0,210,255,.82),0 0 16px rgba(0,200,255,.45),0 0 26px rgba(0,196,232,.20);
   border-radius:1px;
 }
 
@@ -544,44 +666,48 @@ body{
 }
 .knob-lbl{font-size:8px;color:var(--text2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 .knob{
-  width:44px;height:44px;border-radius:50%;
+  width:46px;height:46px;border-radius:50%;
   position:relative;cursor:grab;touch-action:none;
-  /* outer ring arc — background driven live by JS */
-  background:conic-gradient(#0C1820 0deg 225deg, #0C1820 225deg 360deg);
+  background:conic-gradient(#0A1620 0deg 225deg, #0A1620 225deg 360deg);
   box-shadow:
-    0 4px 14px rgba(0,0,0,.98),
-    0 0 0 1px rgba(0,0,0,.9),
-    0 0 18px rgba(0,196,232,.1),
-    0 0 36px rgba(0,196,232,.05);
+    0 4px 16px rgba(0,0,0,1),
+    0 0 0 1px rgba(0,0,0,.95),
+    0 0 20px rgba(0,196,232,.08),
+    0 0 40px rgba(0,196,232,.04);
   transition:box-shadow .15s;
 }
-.knob:active{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,.98),0 0 0 1px rgba(0,0,0,.9),0 0 24px rgba(0,196,232,.3),0 0 48px rgba(0,196,232,.12);}
+.knob:active{cursor:grabbing;box-shadow:0 4px 16px rgba(0,0,0,1),0 0 0 1px rgba(0,0,0,.95),0 0 28px rgba(0,196,232,.28),0 0 52px rgba(0,196,232,.10);}
 @keyframes detent-flash{
   0%  {filter:brightness(1);}
   35% {filter:brightness(2.5) drop-shadow(0 0 6px rgba(0,240,255,.9));}
   100%{filter:brightness(1);}
 }
 .knob.at-detent{animation:detent-flash .28s ease-out;}
-/* inner body */
+/* matte inner body — hardware console knob */
 .knob-body{
   position:absolute;inset:5px;border-radius:50%;
-  background:radial-gradient(circle at 32% 26%,#263C52 0%,#142030 35%,#080E18 100%);
-  border:1px solid rgba(0,0,0,.95);
+  background:radial-gradient(circle at 34% 28%,#223448 0%,#0C1C2A 42%,#050A12 100%);
+  border:1px solid rgba(0,0,0,.98);
   box-shadow:
-    inset 0 2px 5px rgba(255,255,255,.09),
-    inset 0 -2px 4px rgba(0,0,0,.8),
-    inset 0 0 16px rgba(0,200,192,.06);
+    inset 0 2px 4px rgba(255,255,255,.06),
+    inset 0 -2px 5px rgba(0,0,0,.92),
+    inset 0 0 14px rgba(0,200,192,.04);
 }
-/* indicator pointer — bright white-to-teal line */
+/* indicator pointer */
 .knob-dot{
   position:absolute;
-  width:4px;height:13px;
-  background:linear-gradient(180deg,#FFFFFF 0%,#80F0FF 35%,#00C8E8 100%);
+  width:3px;height:13px;
+  background:linear-gradient(180deg,#FFFFFF 0%,#A0F0FF 30%,#00C8E8 100%);
   border-radius:2px;
   top:6px;left:50%;
-  transform-origin:50% 16px;
+  transform-origin:50% 17px;
   transform:translateX(-50%) rotate(0deg);
-  box-shadow:0 0 6px rgba(0,240,255,.9),0 0 14px rgba(0,196,232,.7),0 0 24px rgba(0,196,232,.35);
+  box-shadow:0 0 5px rgba(0,240,255,.85),0 0 12px rgba(0,196,232,.65),0 0 22px rgba(0,196,232,.3);
+  transition:box-shadow .38s ease-out;
+}
+.knob.value-active .knob-dot{
+  box-shadow:0 0 8px rgba(0,255,255,1),0 0 18px rgba(0,220,255,.9),0 0 34px rgba(0,196,232,.65),0 0 52px rgba(0,196,232,.3);
+  transition:box-shadow .04s ease-in;
 }
 @keyframes btn-pulse{
   0%,100%{box-shadow:0 0 8px rgba(0,196,232,.35),0 0 18px rgba(0,196,232,.15),0 0 0 1px rgba(217,70,239,.12),inset 0 1px 0 rgba(0,232,255,.1),inset 0 0 8px rgba(0,196,232,.04);}
@@ -599,11 +725,13 @@ body{
 .ch-btn{
   height:26px;border-radius:3px;
   border:1px solid var(--border2);
-  background:var(--fader-bg);
+  border-top-color:#080E18;
+  background:linear-gradient(180deg,#04080E 0%,#060C14 100%);
   color:var(--text2);
   font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
   cursor:pointer;transition:all .1s;
   display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.7),inset 0 2px 6px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.025);
 }
 .ch-btn:hover{background:var(--panel2);border-color:var(--accent);color:var(--accent2);text-shadow:0 0 8px rgba(0,200,255,.5);}
 .ch-btn.active{
@@ -868,7 +996,7 @@ body{
     <!-- CHANNEL T1: MODE / DRIVE -->
     <div class="ch t1">
       <div class="ch-accent"></div>
-      <div class="ch-id">T1 — MODE</div>
+      <div class="ch-hdr-row"><span class="ch-id">T1 — MODE</span><button class="ch-pwr" id="cpwr-t1" onclick="toggleTrack('t1')" title="Enable / mute track">◉</button></div>
 
       <div class="fader-wrap">
         <div class="fader-lbl">INTENSITY</div>
@@ -893,16 +1021,16 @@ body{
       </div>
 
       <div class="ch-btns">
-        <div class="ch-btn" data-field="mode" data-val="EXPLORE" onclick="set('mode','EXPLORE')">EXPLORE</div>
-        <div class="ch-btn" data-field="mode" data-val="FIX"     onclick="set('mode','FIX')">FIX</div>
-        <div class="ch-btn" data-field="mode" data-val="BUILD"   onclick="set('mode','BUILD')">BUILD</div>
+        <div class="ch-btn" data-field="mode" data-val="EXPLORE" onclick="toggleBtn('mode','EXPLORE')">EXPLORE</div>
+        <div class="ch-btn mute-btn" id="mbtn-t1" onclick="toggleTrack('t1')">MUTE</div>
+        <div class="ch-btn" data-field="mode" data-val="BUILD"   onclick="toggleBtn('mode','BUILD')">BUILD</div>
       </div>
     </div>
 
     <!-- CHANNEL T2: CONFIDENCE -->
     <div class="ch t2">
       <div class="ch-accent"></div>
-      <div class="ch-id">T2 — CONF</div>
+      <div class="ch-hdr-row"><span class="ch-id">T2 — CONF</span><button class="ch-pwr" id="cpwr-t2" onclick="toggleTrack('t2')" title="Enable / mute track">◉</button></div>
 
       <div class="fader-wrap">
         <div class="fader-lbl">CERTAINTY</div>
@@ -926,9 +1054,9 @@ body{
       </div>
 
       <div class="ch-btns">
-        <div class="ch-btn" data-field="stance" data-val="LIST"   onclick="set('stance','LIST')">LIST</div>
-        <div class="ch-btn" data-field="stance" data-val="GUIDE"  onclick="set('stance','GUIDE')">GUIDE</div>
-        <div class="ch-btn" data-field="stance" data-val="DECIDE" onclick="set('stance','DECIDE')">DECIDE</div>
+        <div class="ch-btn" data-field="stance" data-val="LIST"   onclick="toggleBtn('stance','LIST')">LIST</div>
+        <div class="ch-btn mute-btn" id="mbtn-t2" onclick="toggleTrack('t2')">MUTE</div>
+        <div class="ch-btn" data-field="stance" data-val="DECIDE" onclick="toggleBtn('stance','DECIDE')">DECIDE</div>
       </div>
     </div>
 
@@ -1009,7 +1137,7 @@ body{
     <!-- CHANNEL T3: SCOPE -->
     <div class="ch t3">
       <div class="ch-accent"></div>
-      <div class="ch-id">T3 — SCOPE</div>
+      <div class="ch-hdr-row"><span class="ch-id">T3 — SCOPE</span><button class="ch-pwr" id="cpwr-t3" onclick="toggleTrack('t3')" title="Enable / mute track">◉</button></div>
 
       <div class="fader-wrap">
         <div class="fader-lbl">SCOPE</div>
@@ -1033,16 +1161,16 @@ body{
       </div>
 
       <div class="ch-btns">
-        <div class="ch-btn" data-field="filter" data-val="FILE"    onclick="set('filter','FILE')">FILE</div>
-        <div class="ch-btn" data-field="filter" data-val="MODULE"  onclick="set('filter','MODULE')">MODULE</div>
-        <div class="ch-btn" data-field="filter" data-val="PROJECT" onclick="set('filter','PROJECT')">PROJECT</div>
+        <div class="ch-btn" data-field="filter" data-val="FILE"    onclick="toggleBtn('filter','FILE')">FILE</div>
+        <div class="ch-btn mute-btn" id="mbtn-t3" onclick="toggleTrack('t3')">MUTE</div>
+        <div class="ch-btn" data-field="filter" data-val="PROJECT" onclick="toggleBtn('filter','PROJECT')">PROJECT</div>
       </div>
     </div>
 
     <!-- CHANNEL T4: VOICE -->
     <div class="ch t4">
       <div class="ch-accent"></div>
-      <div class="ch-id">T4 — VOICE</div>
+      <div class="ch-hdr-row"><span class="ch-id">T4 — VOICE</span><button class="ch-pwr" id="cpwr-t4" onclick="toggleTrack('t4')" title="Enable / mute track">◉</button></div>
 
       <div class="fader-wrap">
         <div class="fader-lbl">ROOM</div>
@@ -1066,9 +1194,9 @@ body{
       </div>
 
       <div class="ch-btns">
-        <div class="ch-btn" data-field="voice" data-val="DIRECT" onclick="set('voice','DIRECT')">DIRECT</div>
-        <div class="ch-btn" data-field="voice" data-val="STUDIO" onclick="set('voice','STUDIO')">STUDIO</div>
-        <div class="ch-btn" data-field="voice" data-val="OPEN"   onclick="set('voice','OPEN')">OPEN</div>
+        <div class="ch-btn" data-field="voice" data-val="DIRECT" onclick="toggleBtn('voice','DIRECT')">DIRECT</div>
+        <div class="ch-btn mute-btn" id="mbtn-t4" onclick="toggleTrack('t4')">MUTE</div>
+        <div class="ch-btn" data-field="voice" data-val="OPEN"   onclick="toggleBtn('voice','OPEN')">OPEN</div>
       </div>
     </div>
 
@@ -1084,45 +1212,150 @@ body{
     <button class="faq-close" onclick="closeFaq()">✕</button>
   </div>
   <div class="faq-body">
+
     <div class="faq-s">
-      <div class="faq-s-title">what is this?</div>
-      <p class="faq-p">Control is a behavioral interface for Claude Code. A mixing board for how an AI coding agent thinks. Every fader, knob, and button adjusts a parameter in the system prompt. Same task. Different state. Measurably different output. Every time.</p>
+      <div class="faq-s-title">what is control?</div>
+      <p class="faq-p">Control is a behavioral mixing board for Claude Code. Every fader, knob, and button writes to a system prompt in real time. Same task, different state — measurably different output. You perform instead of prompt.</p>
+      <p class="faq-p">Four tracks. Each one controls a different dimension of how Claude thinks. All parameters flow through <code style="background:#040608;padding:1px 4px;border-radius:2px;font-size:10px">~/.streamfader/state.json</code>, which the CLI reads on every run.</p>
     </div>
+
     <div class="faq-s">
-      <div class="faq-s-title">the four tracks</div>
+      <div class="faq-s-title">T1 — MODE</div>
       <div class="faq-track">
-        <div class="faq-track-name">T1 — MODE · fader: Intensity · knob: Depth</div>
-        <div class="faq-track-desc">EXPLORE (analyze only), FIX (one root cause), BUILD (one atomic change). Intensity compresses output. Depth controls reasoning depth.</div>
-      </div>
-      <div class="faq-track" style="border-left-color:#8B5CF6">
-        <div class="faq-track-name">T2 — CONFIDENCE · fader: Certainty · knob: Risk</div>
-        <div class="faq-track-desc">How committed Claude is. Certainty = how strongly it picks a path. Risk = how bold the changes. Stance: LIST shows alternatives, GUIDE recommends then acts, DECIDE just does it.</div>
-      </div>
-      <div class="faq-track" style="border-left-color:#00A8A0">
-        <div class="faq-track-name">T3 — SCOPE · fader: Scope · knob: Bandwidth</div>
-        <div class="faq-track-desc">How wide Claude looks. Filter: FILE (this file only), MODULE (this module), PROJECT (full codebase).</div>
-      </div>
-      <div class="faq-track" style="border-left-color:#6040C8">
-        <div class="faq-track-name">T4 — VOICE · fader: Room · knob: Decay</div>
-        <div class="faq-track-desc">The feel of output. Room = breathing space. Decay = how long ideas echo. Voice: DIRECT (output only), STUDIO (clean), OPEN (thinks out loud).</div>
+        <div class="faq-track-name">Fader: Intensity &nbsp;·&nbsp; Knob: Depth</div>
+        <div class="faq-track-desc">Sets what Claude is allowed to do and how it reasons.</div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--accent2)">EXPLORE</strong> — analysis only. No code changes. Ends with a single decision point.<br>
+          <strong style="color:var(--accent2)">BUILD</strong> — one atomic change only. No refactoring unless required.<br>
+          <em style="opacity:.5">Nothing selected = track off, mode rules skipped.</em>
+        </div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--text)">Intensity</strong> — HIGH compresses output to direct execution. LOW opens verbose exploratory reasoning.<br>
+          <strong style="color:var(--text)">Depth</strong> — HIGH allows deep diagnostic chains. LOW keeps reasoning at the surface.
+        </div>
       </div>
     </div>
+
     <div class="faq-s">
-      <div class="faq-s-title">preview vs. ctrl run</div>
-      <p class="faq-p">Preview Run calls Claude API directly — same model, no file access. The real workflow:</p>
-      <code class="faq-code">ctrl run "refactor the auth module"</code>
-      <p class="faq-p">This invokes Claude Code with full tool access. The state set here shapes how it works.</p>
+      <div class="faq-s-title">T2 — CONFIDENCE</div>
+      <div class="faq-track" style="border-left-color:#8B5CF6">
+        <div class="faq-track-name">Fader: Certainty &nbsp;·&nbsp; Knob: Risk</div>
+        <div class="faq-track-desc">Controls how committed Claude is to its choices and how bold the changes are.</div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:#A78BFA">LIST</strong> — shows 2–3 alternatives with pros/cons. Does not pick.<br>
+          <strong style="color:#A78BFA">DECIDE</strong> — picks one approach and implements it. Zero explanation of alternatives.
+        </div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--text)">Certainty</strong> — HIGH commits to one solution, no hedging. LOW shows options.<br>
+          <strong style="color:var(--text)">Risk</strong> — HIGH pursues the best solution even if it requires large changes. LOW stays close to existing patterns.
+        </div>
+      </div>
     </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">T3 — SCOPE</div>
+      <div class="faq-track" style="border-left-color:#00A8A0">
+        <div class="faq-track-name">Fader: Scope &nbsp;·&nbsp; Knob: Bandwidth</div>
+        <div class="faq-track-desc">Controls how wide Claude looks when building context.</div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--accent2)">FILE</strong> — strict local scope. This file only, no cross-module pulls.<br>
+          <strong style="color:var(--accent2)">PROJECT</strong> — full codebase context allowed, global awareness.
+        </div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--text)">Scope</strong> — how far out Claude searches for relevant code and context.<br>
+          <strong style="color:var(--text)">Bandwidth</strong> — HIGH pulls in adjacent concerns freely. LOW is surgical, touches nothing adjacent.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">T4 — VOICE</div>
+      <div class="faq-track" style="border-left-color:#6040C8">
+        <div class="faq-track-name">Fader: Room &nbsp;·&nbsp; Knob: Decay</div>
+        <div class="faq-track-desc">Controls how output feels — the texture of Claude's responses.</div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:#A78BFA">DIRECT</strong> — dead room. Output only, zero commentary or preamble.<br>
+          <strong style="color:#A78BFA">OPEN</strong> — full resonance. Thinks out loud with you, collaborative tone.
+        </div>
+        <div class="faq-track-desc" style="margin-top:6px">
+          <strong style="color:var(--text)">Room</strong> — WET gives breathing room and space. DRY is close-mic'd, just the output.<br>
+          <strong style="color:var(--text)">Decay</strong> — LONG lets ideas echo and build. SHORT compresses to tight, every-word-counts density.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">muting tracks</div>
+      <p class="faq-p">Every track can be turned off independently. A muted track contributes nothing to the system prompt — those rules are completely skipped.</p>
+      <p class="faq-p">Two ways to mute a track:</p>
+      <p class="faq-p"><strong style="color:var(--accent2)">◉ button</strong> in the channel header — top right of each strip. Click to toggle off/on. Glows red when muted.</p>
+      <p class="faq-p"><strong style="color:#D07070">MUTE button</strong> in the button row — middle button on each track. Same toggle, different physical location. Pulses red when active to make muted state visible at a glance.</p>
+      <p class="faq-p">On a physical nanoKONTROL2, the <strong style="color:var(--text)">M buttons</strong> (row 2 on the controller) mute the corresponding track.</p>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">button toggle behavior</div>
+      <p class="faq-p">All mode buttons (EXPLORE, BUILD, LIST, DECIDE, FILE, PROJECT, DIRECT, OPEN) are deselectable. Click an active button again to turn it off entirely. When nothing is selected, that parameter is absent from the system prompt — Claude uses its default behavior for that dimension.</p>
+      <p class="faq-p">This is different from picking a middle ground. Leaving a parameter empty means <em>no rule applied</em>, not a neutral setting.</p>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">faders</div>
+      <p class="faq-p"><strong style="color:var(--text)">Drag</strong> — click and drag vertically anywhere on the track. The Level Halo (atmospheric glow fill) rises with the value — the higher the setting, the more light pools in the channel.</p>
+      <p class="faq-p"><strong style="color:var(--text)">Fine mode</strong> — hold <kbd style="background:#040608;padding:1px 5px;border-radius:2px;font-size:10px;border:1px solid var(--border2)">Shift</kbd> while dragging for 5× precision. Useful for dialing exact values.</p>
+      <p class="faq-p"><strong style="color:var(--text)">Reset</strong> — double-click the thumb to reset to 0.50.</p>
+      <p class="faq-p">The fader glows teal (T1/T3) or purple (T2/T4) during both mouse drag and physical controller movement.</p>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">knobs</div>
+      <p class="faq-p"><strong style="color:var(--text)">Drag vertically</strong> on the knob — up increases, down decreases. The arc fills clockwise to show position.</p>
+      <p class="faq-p">The knob glow scales with the value — at 0 it barely glows; at 1.0 it burns bright. You can read rough position from the glow intensity without looking at the number.</p>
+      <p class="faq-p"><strong style="color:var(--text)">Center flash</strong> — when you hit 0.50 exactly, the dot briefly flashes white as a detent cue.</p>
+    </div>
+
+    <div class="faq-s">
+      <div class="faq-s-title">LAUNCH vs PREVIEW RUN</div>
+      <p class="faq-p"><strong style="color:#A78BFA">LAUNCH</strong> (purple) — runs <code style="background:#040608;padding:1px 4px;border-radius:2px;font-size:10px">ctrl run</code> via terminal. Claude Code with full tool access — reads files, writes code, executes bash. This is the real thing. The state set here shapes every decision.</p>
+      <p class="faq-p"><strong style="color:var(--accent2)">PREVIEW RUN</strong> (teal) — calls the Claude API directly with the current system prompt. API only, no file access. Shows you exactly what instructions your current state produces. Good for dialing in a prompt before committing to a full run.</p>
+    </div>
+
     <div class="faq-s">
       <div class="faq-s-title">physical controller</div>
+      <p class="faq-p">Korg nanoKONTROL2. Start the MIDI bridge:</p>
       <code class="faq-code">ctrl nano --start</code>
-      <p class="faq-p">Faders map to parameters in real time. State file at <code style="background:#040608;padding:1px 4px;border-radius:2px;font-size:10px">~/.streamfader/state.json</code>.</p>
+      <p class="faq-p">Controller layout:</p>
+      <div class="faq-track">
+        <div class="faq-track-desc">
+          <strong style="color:var(--text)">Faders 1–4</strong> — Intensity, Certainty, Scope, Room<br>
+          <strong style="color:var(--text)">Knobs 1–4</strong> — Depth, Risk, Bandwidth, Decay<br>
+          <strong style="color:var(--text)">S buttons</strong> (row 1) — left-extreme mode per track (EXPLORE / LIST / FILE / DIRECT)<br>
+          <strong style="color:var(--text)">M buttons</strong> (row 2) — mute T1 / T2 / T3 / T4<br>
+          <strong style="color:var(--text)">R buttons</strong> (row 3) — right-extreme mode per track (BUILD / DECIDE / PROJECT / OPEN)<br>
+          <strong style="color:var(--text)">PLAY</strong> — replay last task<br>
+          <strong style="color:var(--text)">STOP</strong> — kill running Claude process
+        </div>
+      </div>
+      <p class="faq-p">M button LEDs light up when that track is muted. Everything syncs back to the UI in real time via SSE — no refresh needed.</p>
     </div>
+
     <div class="faq-s">
-      <div class="faq-s-title">the proof</div>
-      <p class="faq-p">Set MODE to EXPLORE, intensity LOW, stance LIST. Ask Claude anything. Then flip to BUILD, intensity HIGH, stance DECIDE. The outputs are measurably different.</p>
-      <p class="faq-p" style="opacity:.3;font-style:italic">That's the machine. You hold the dial.</p>
+      <div class="faq-s-title">practical combos</div>
+      <div class="faq-track">
+        <div class="faq-track-name">Analyze before touching code</div>
+        <div class="faq-track-desc">T1: EXPLORE, Intensity LOW, Depth HIGH. T2: LIST. Mute T3 + T4. Ask anything. No files touched, full options shown.</div>
+      </div>
+      <div class="faq-track">
+        <div class="faq-track-name">Fast surgical fix</div>
+        <div class="faq-track-desc">T1: BUILD, Intensity HIGH. T2: DECIDE, Certainty HIGH, Risk LOW. T3: FILE. T4: DIRECT. One file, one fix, no commentary.</div>
+      </div>
+      <div class="faq-track">
+        <div class="faq-track-name">Risky refactor</div>
+        <div class="faq-track-desc">T1: BUILD, Depth HIGH. T2: DECIDE, Risk HIGH. T3: PROJECT, Bandwidth HIGH. T4: STUDIO. Full codebase access, bold changes, clean output.</div>
+      </div>
+      <p class="faq-p" style="opacity:.3;font-style:italic;margin-top:12px">Same task. Different state. That's the machine.</p>
     </div>
+
   </div>
 </div>
 
@@ -1145,8 +1378,10 @@ const METERS   = ['intensity','depth','certainty','risk','scope','bandwidth','ro
 const BADGE_C  = {EXPLORE:'#00A8A0', FIX:'#8B5CF6', BUILD:'#00C8C0'};
 const PILL_C   = ['#00C8C0','#8B5CF6','#00A0A8','#6040C8'];
 
-let isDragging = false;
-let lastState  = {};
+let isDragging  = false;
+let lastState   = {};
+const activeTimers = {};
+const prevVals  = {};  // tracks last seen value per field to detect real changes
 
 const INFO = {
   intensity:  ['INTENSITY',  'How hard Claude pushes. HIGH = minimal output, direct execution. LOW = verbose reasoning, exploratory tone.'],
@@ -1189,28 +1424,46 @@ function clearInfo() {
 function buildPromptPreview(s) {
   const i=s.intensity??0.5, d=s.depth??0.5, c=s.certainty??0.5, r=s.risk??0.5;
   const sc=s.scope??0.5, bw=s.bandwidth??0.5, ro=s.room??0.3, dc=s.decay??0.3;
+  const t1=s.t1_on!==false, t2=s.t2_on!==false, t3=s.t3_on!==false, t4=s.t4_on!==false;
   const lines = [];
   const kv = (k,v) => `<span class="pp-key">${k}:</span> <span class="pp-val">${v}</span>`;
-  if (s.mode==='EXPLORE') lines.push(kv('MODE','EXPLORE — analysis only, no code changes'));
-  else if (s.mode==='FIX') lines.push(kv('MODE','FIX — one root cause, one fix'));
-  else lines.push(kv('MODE','BUILD — one atomic change'));
-  lines.push(kv('INTENSITY', i>=0.7?'HIGH — minimal output, direct execution':i>=0.4?'MED — concise reasoning':'LOW — verbose reasoning, exploratory'));
-  lines.push(kv('DEPTH',     d>=0.7?'HIGH — deeper diagnostic reasoning':d>=0.4?'MED — moderate analysis':'LOW — surface-level only'));
-  lines.push(kv('CERTAINTY', c>=0.7?'HIGH — one solution, no alternatives':c>=0.4?'MED — recommendation + brief reasoning':'LOW — show 2-3 approaches, do not pick'));
-  lines.push(kv('RISK',      r>=0.7?'HIGH — best solution, even if significant changes':r>=0.4?'MED — prefer existing patterns where reasonable':'LOW — stay close to existing, minimal disruption'));
-  if (s.stance==='LIST')   lines.push(kv('STANCE','LIST — present alternatives only, do not implement'));
-  else if (s.stance==='DECIDE') lines.push(kv('STANCE','DECIDE — pick one, implement it, zero explanation'));
-  else lines.push(kv('STANCE','GUIDE — recommend with brief reasoning, then implement'));
-  lines.push(kv('SCOPE',     sc>=0.7?'WIDE — full codebase':sc>=0.4?'MED — module + dependencies':'NARROW — immediate file or function only'));
-  lines.push(kv('BANDWIDTH', bw>=0.7?'WIDE — pull in adjacent concerns freely':bw>=0.4?'MED — related things welcome if relevant':'NARROW — surgical, touch nothing adjacent'));
-  if (s.filter==='FILE')    lines.push(kv('FILTER','FILE — this file only, no cross-module context'));
-  else if (s.filter==='PROJECT') lines.push(kv('FILTER','PROJECT — full project scope, global context'));
-  else lines.push(kv('FILTER','MODULE — shaped band around the module'));
-  lines.push(kv('ROOM',      ro>=0.7?'WET — open space, think out loud':ro>=0.4?'MED — some space, conversational':'DRY — close-mic\'d, no space, just output'));
-  lines.push(kv('DECAY',     dc>=0.7?'LONG — ideas echo and build':dc>=0.4?'MED — moderate density':'SHORT — tight, every word counts'));
-  if (s.voice==='DIRECT') lines.push(kv('VOICE','DIRECT — dead room, output only, zero preamble'));
-  else if (s.voice==='OPEN') lines.push(kv('VOICE','OPEN — collaborative, thinks out loud'));
-  else lines.push(kv('VOICE','STUDIO — professional, measured, clean'));
+  const off = (t) => `<span class="pp-key" style="opacity:.3">${t}:</span> <span class="pp-val" style="opacity:.3;font-style:italic">muted — excluded from prompt</span>`;
+  if (!t1) { lines.push(off('T1 MODE')); }
+  else {
+    if (s.mode==='EXPLORE') lines.push(kv('MODE','EXPLORE — analysis only, no code changes'));
+    else if (s.mode==='FIX') lines.push(kv('MODE','FIX — one root cause, one fix'));
+    else if (s.mode==='BUILD') lines.push(kv('MODE','BUILD — one atomic change'));
+    else lines.push(kv('MODE','— none selected'));
+    lines.push(kv('INTENSITY', i>=0.7?'HIGH — minimal output, direct execution':i>=0.4?'MED — concise reasoning':'LOW — verbose reasoning, exploratory'));
+    lines.push(kv('DEPTH',     d>=0.7?'HIGH — deeper diagnostic reasoning':d>=0.4?'MED — moderate analysis':'LOW — surface-level only'));
+  }
+  if (!t2) { lines.push(off('T2 CONF')); }
+  else {
+    lines.push(kv('CERTAINTY', c>=0.7?'HIGH — one solution, no alternatives':c>=0.4?'MED — recommendation + brief reasoning':'LOW — show 2-3 approaches, do not pick'));
+    lines.push(kv('RISK',      r>=0.7?'HIGH — best solution, even if significant changes':r>=0.4?'MED — prefer existing patterns where reasonable':'LOW — stay close to existing, minimal disruption'));
+    if (s.stance==='LIST')        lines.push(kv('STANCE','LIST — present alternatives only, do not implement'));
+    else if (s.stance==='DECIDE') lines.push(kv('STANCE','DECIDE — pick one, implement it, zero explanation'));
+    else if (s.stance==='GUIDE')  lines.push(kv('STANCE','GUIDE — recommend with brief reasoning, then implement'));
+    else lines.push(kv('STANCE','— none selected'));
+  }
+  if (!t3) { lines.push(off('T3 SCOPE')); }
+  else {
+    lines.push(kv('SCOPE',     sc>=0.7?'WIDE — full codebase':sc>=0.4?'MED — module + dependencies':'NARROW — immediate file or function only'));
+    lines.push(kv('BANDWIDTH', bw>=0.7?'WIDE — pull in adjacent concerns freely':bw>=0.4?'MED — related things welcome if relevant':'NARROW — surgical, touch nothing adjacent'));
+    if (s.filter==='FILE')         lines.push(kv('FILTER','FILE — this file only, no cross-module context'));
+    else if (s.filter==='PROJECT') lines.push(kv('FILTER','PROJECT — full project scope, global context'));
+    else if (s.filter==='MODULE')  lines.push(kv('FILTER','MODULE — shaped band around the module'));
+    else lines.push(kv('FILTER','— none selected'));
+  }
+  if (!t4) { lines.push(off('T4 VOICE')); }
+  else {
+    lines.push(kv('ROOM',  ro>=0.7?'WET — open space, think out loud':ro>=0.4?'MED — some space, conversational':'DRY — close-mic\'d, no space, just output'));
+    lines.push(kv('DECAY', dc>=0.7?'LONG — ideas echo and build':dc>=0.4?'MED — moderate density':'SHORT — tight, every word counts'));
+    if (s.voice==='DIRECT')      lines.push(kv('VOICE','DIRECT — dead room, output only, zero preamble'));
+    else if (s.voice==='OPEN')   lines.push(kv('VOICE','OPEN — collaborative, thinks out loud'));
+    else if (s.voice==='STUDIO') lines.push(kv('VOICE','STUDIO — professional, measured, clean'));
+    else lines.push(kv('VOICE','— none selected'));
+  }
   return lines.join('\n');
 }
 
@@ -1218,17 +1471,17 @@ function buildPromptPreview(s) {
 function buildTicks(containerId) {
   const c = document.getElementById(containerId); if (!c) return;
   const ticks = [
-    {v:1.0, lbl:'1.0', major:true},
+    {v:1.0, lbl:'100', major:true},
     {v:0.9, lbl:'',    major:false},
-    {v:0.8, lbl:'0.8', major:false},
+    {v:0.8, lbl:'80',  major:false},
     {v:0.7, lbl:'',    major:false},
-    {v:0.6, lbl:'0.6', major:false},
-    {v:0.5, lbl:'0.5', major:true},
-    {v:0.4, lbl:'0.4', major:false},
+    {v:0.6, lbl:'60',  major:false},
+    {v:0.5, lbl:'50',  major:true},
+    {v:0.4, lbl:'40',  major:false},
     {v:0.3, lbl:'',    major:false},
-    {v:0.2, lbl:'0.2', major:false},
+    {v:0.2, lbl:'20',  major:false},
     {v:0.1, lbl:'',    major:false},
-    {v:0.0, lbl:'0.0', major:true},
+    {v:0.0, lbl:'0',   major:true},
   ];
   c.innerHTML = ticks.map(t =>
     `<div class="tick">
@@ -1248,6 +1501,17 @@ function setFader(field, v) {
   document.getElementById(f.fill).style.height  = (v*100)+'%';
   document.getElementById(f.thumb).style.bottom = (v*r)+'px';
   document.getElementById(f.val).textContent    = v.toFixed(2);
+  // Buzz: only fire glow when this specific fader's value actually changed
+  const prev = prevVals['f_'+field];
+  prevVals['f_'+field] = v;
+  if (prev !== undefined && Math.abs(v - prev) > 0.001) {
+    const trackEl = document.getElementById(f.track);
+    if (trackEl && !trackEl.classList.contains('dragging')) {
+      trackEl.classList.add('value-active');
+      clearTimeout(activeTimers['f_'+field]);
+      activeTimers['f_'+field] = setTimeout(() => trackEl.classList.remove('value-active'), 460);
+    }
+  }
 }
 function setKnob(field, v) {
   const k = KNOBS[field]; if (!k) return;
@@ -1255,15 +1519,26 @@ function setKnob(field, v) {
   if (dot) dot.style.transform = `translateX(-50%) rotate(${-135+v*270}deg)`;
   const val = document.getElementById(k.val);
   if (val) val.textContent = v.toFixed(2);
-  // Live conic arc on outer ring: sweep from 225° to current position
   const knobEl = document.getElementById('knob-'+field);
   if (knobEl) {
+    // Live conic arc: sweep from 225° to current position
     const s = 225, e = s + v * 270;
-    const dark = '#0A1620';
-    const lit  = 'var(--accent)';
+    const dark = '#0A1620', lit = 'var(--accent)';
     knobEl.style.background = e <= 360
       ? `conic-gradient(${dark} 0deg ${s}deg,${lit} ${s}deg ${e}deg,${dark} ${e}deg 360deg)`
       : `conic-gradient(${lit} 0deg ${e-360}deg,${dark} ${e-360}deg ${s}deg,${lit} ${s}deg 360deg)`;
+    // Outer glow scales continuously with value — knob "glows hotter" as you push it up
+    const gi = (0.06 + v * 0.24).toFixed(3);
+    const gs = Math.round(16 + v * 26);
+    knobEl.style.boxShadow = `0 4px 16px rgba(0,0,0,1),0 0 0 1px rgba(0,0,0,.95),0 0 ${gs}px rgba(0,196,232,${gi}),0 0 ${gs*2}px rgba(0,196,232,${(parseFloat(gi)*0.42).toFixed(3)})`;
+    // Buzz: only fire indicator flash when this knob's value actually changed
+    const kprev = prevVals['k_'+field];
+    prevVals['k_'+field] = v;
+    if (kprev !== undefined && Math.abs(v - kprev) > 0.001) {
+      knobEl.classList.add('value-active');
+      clearTimeout(activeTimers['k_'+field]);
+      activeTimers['k_'+field] = setTimeout(() => knobEl.classList.remove('value-active'), 460);
+    }
   }
 }
 function setMeter(field, v) {
@@ -1308,11 +1583,28 @@ function applyState(s) {
   setPill('pill-stance', s.stance||'—', PILL_C[1]);
   setPill('pill-filter', s.filter||'—', PILL_C[2]);
   setPill('pill-voice',  s.voice ||'—', PILL_C[3]);
+  // Apply per-track mute state
+  ['t1','t2','t3','t4'].forEach(t => {
+    const on = s[t+'_on'] !== false;
+    const ch = document.querySelector('.ch.'+t);
+    if (ch) ch.classList.toggle('ch-off', !on);
+    const pwr = document.getElementById('cpwr-'+t);
+    if (pwr) pwr.classList.toggle('off', !on);
+    const mbtn = document.getElementById('mbtn-'+t);
+    if (mbtn) mbtn.classList.toggle('active', !on);
+  });
   document.getElementById('prompt-preview').innerHTML = buildPromptPreview(s);
 }
 
 async function set(field, value) {
   await fetch('/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({[field]:value})});
+}
+function toggleBtn(field, val) {
+  set(field, lastState[field] === val ? '' : val);
+}
+function toggleTrack(t) {
+  const key = t + '_on';
+  set(key, lastState[key] === false ? true : false);
 }
 
 const es = new EventSource('/stream');
