@@ -314,21 +314,35 @@ HTML = r"""<!DOCTYPE html>
   --fader-trk: #020406;
   --thumb-hi:  #A8C4D8;
   --thumb-lo:  #1C2E40;
+  --magenta:   #D946EF;
+  --magenta2:  #F0ABFF;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);height:100vh;display:flex;flex-direction:column;user-select:none;overflow:hidden;}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(rgba(0,196,232,.04) 1px,transparent 1px);
+  background-size:28px 28px;
+  font-family:'Inter',sans-serif;color:var(--text);
+  height:100vh;display:flex;flex-direction:column;user-select:none;overflow:hidden;
+}
 
 /* ── HEADER ─────────────────────────────────────────────── */
 .hdr{
   padding:0 16px;
   border-bottom:1px solid var(--border);
   background:#030507;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 3px);
   display:flex;align-items:center;gap:10px;
   flex-shrink:0;height:42px;
-  box-shadow:0 1px 0 rgba(0,200,192,.08);
+  box-shadow:0 1px 0 rgba(0,200,192,.1);
 }
 .logo-mark{flex-shrink:0;}
-.brand{font-family:'Abril Fatface',serif;font-size:17px;color:var(--accent2);letter-spacing:.02em;line-height:1;text-shadow:0 0 20px rgba(0,232,224,.4);}
+.brand{
+  font-family:'Abril Fatface',serif;font-size:17px;letter-spacing:.06em;line-height:1;
+  background:linear-gradient(130deg,#00E8FF 0%,#A0C8FF 50%,#C0A0FF 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 6px rgba(0,200,255,.55)) drop-shadow(0 0 14px rgba(160,100,255,.3));
+}
 .hdr-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .hdr-badge{
   font-size:10px;font-weight:800;letter-spacing:.12em;
@@ -351,7 +365,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .hero svg{position:absolute;inset:0;width:100%;height:100%;}
 .hero-left{position:absolute;left:22px;top:50%;transform:translateY(-52%);pointer-events:none;z-index:1;}
 .hero-brand{font-family:'Abril Fatface',serif;font-size:62px;color:rgba(0,200,192,.06);line-height:1;}
-.hero-tagline{font-size:11px;font-weight:700;letter-spacing:.28em;color:#FFE040;text-transform:uppercase;margin-top:4px;text-shadow:0 0 4px #FFF8D0,0 0 10px #FFD700,0 0 22px #FF8C00,0 0 40px #FF4500,0 0 60px rgba(255,40,0,.35);}
+.hero-tagline{font-size:11px;font-weight:700;letter-spacing:.28em;color:#FFF8E0;text-transform:uppercase;margin-top:4px;text-shadow:0 0 3px #FFF,0 0 8px #FFE040,0 0 16px #FFB020,0 0 28px #FF5500,0 0 50px rgba(217,70,239,.4),0 0 80px rgba(139,92,246,.2);}
 
 /* ── MAIN 3-COLUMN CONSOLE ──────────────────────────────── */
 .console{flex:1;display:flex;overflow:hidden;min-height:0;}
@@ -444,16 +458,25 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .fader-fill{
   position:absolute;bottom:0;left:0;right:0;
   border-radius:3px;
-  background:linear-gradient(0deg,var(--accent) 0%,var(--accent2) 60%,#80F8F0 100%);
-  opacity:.5;
+  background:linear-gradient(0deg,var(--accent) 0%,var(--accent2) 60%,#80F8FF 100%);
+  opacity:.55;
   pointer-events:none;
-  box-shadow:0 0 14px rgba(0,200,192,.4),0 0 4px rgba(0,232,224,.6);
+  box-shadow:0 0 12px rgba(0,196,232,.5),0 0 4px rgba(0,232,255,.7),0 0 24px rgba(0,196,232,.2);
+  transition:box-shadow .1s,opacity .1s;
+}
+.fader-track.dragging .fader-fill{
+  opacity:.8;
+  box-shadow:0 0 18px rgba(0,196,232,.8),0 0 6px rgba(0,232,255,1),0 0 40px rgba(0,196,232,.35),0 0 60px rgba(217,70,239,.15);
+}
+.fader-track.dragging .fader-thumb{
+  box-shadow:0 2px 8px rgba(0,0,0,.9),0 0 14px rgba(0,196,232,.6),0 0 28px rgba(0,196,232,.2),inset 0 1px 0 rgba(255,255,255,.2);
+  border-top-color:#C0E0F0;
 }
 
 /* the hardware thumb cap */
 .fader-thumb{
   position:absolute;
-  width:34px;height:18px;
+  width:36px;height:20px;
   left:50%;transform:translateX(-50%);
   cursor:ns-resize;z-index:3;touch-action:none;
   border-radius:3px;
@@ -507,7 +530,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 }
 .knob-lbl{font-size:8px;color:var(--text2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 .knob{
-  width:38px;height:38px;border-radius:50%;
+  width:40px;height:40px;border-radius:50%;
   position:relative;cursor:grab;touch-action:none;
   /* outer ring */
   background:conic-gradient(
@@ -516,18 +539,19 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
     var(--border2) 0deg 360deg
   );
   box-shadow:
-    0 3px 10px rgba(0,0,0,.9),
-    0 1px 2px rgba(0,0,0,.6),
-    0 0 12px rgba(0,200,192,.08),
+    0 3px 12px rgba(0,0,0,.95),
+    0 0 16px rgba(0,196,232,.1),
+    0 0 30px rgba(0,196,232,.05),
     inset 0 1px 0 rgba(255,255,255,.04);
+  transition:box-shadow .15s;
 }
-.knob:active{cursor:grabbing;}
+.knob:active{cursor:grabbing;box-shadow:0 3px 12px rgba(0,0,0,.95),0 0 20px rgba(0,196,232,.25),0 0 40px rgba(0,196,232,.1),inset 0 1px 0 rgba(255,255,255,.04);}
 /* inner body */
 .knob-body{
   position:absolute;inset:4px;border-radius:50%;
-  background:radial-gradient(circle at 38% 32%,#182838,#080E18);
-  border:1px solid rgba(0,0,0,.7);
-  box-shadow:inset 0 1px 3px rgba(255,255,255,.04),inset 0 0 8px rgba(0,200,192,.04);
+  background:radial-gradient(circle at 35% 30%,#1A2E42,#06101A);
+  border:1px solid rgba(0,0,0,.8);
+  box-shadow:inset 0 1px 4px rgba(255,255,255,.05),inset 0 0 12px rgba(0,200,192,.05);
 }
 /* indicator dot */
 .knob-dot{
@@ -558,12 +582,17 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   cursor:pointer;transition:all .1s;
   display:flex;align-items:center;justify-content:center;
 }
-.ch-btn:hover{background:var(--panel2);border-color:var(--accent);color:var(--accent2);text-shadow:0 0 8px rgba(0,200,192,.5);}
+.ch-btn:hover{background:var(--panel2);border-color:var(--accent);color:var(--accent2);text-shadow:0 0 8px rgba(0,200,255,.5);}
 .ch-btn.active{
-  background:linear-gradient(180deg,#001E20,#001418);
+  background:linear-gradient(180deg,#001C22,#001018);
   color:var(--accent2);border-color:var(--accent);
-  box-shadow:0 0 10px rgba(0,200,192,.3),0 0 20px rgba(0,200,192,.1),inset 0 1px 0 rgba(0,232,224,.08);
-  text-shadow:0 0 8px rgba(0,232,224,.7);
+  box-shadow:
+    0 0 8px rgba(0,196,232,.35),
+    0 0 18px rgba(0,196,232,.15),
+    0 0 0 1px rgba(217,70,239,.12),
+    inset 0 1px 0 rgba(0,232,255,.1),
+    inset 0 0 8px rgba(0,196,232,.04);
+  text-shadow:0 0 6px rgba(0,232,255,.8),0 0 14px rgba(0,196,232,.4);
 }
 
 /* ── CENTER MONITORING PANEL ───────────────────────────── */
@@ -765,6 +794,14 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
         <stop offset="0%" stop-color="#00C8C0" stop-opacity="0.5"/>
         <stop offset="100%" stop-color="#00C8C0" stop-opacity="0"/>
       </linearGradient>
+      <filter id="glow-teal" x="-8%" y="-80%" width="116%" height="260%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-purple" x="-4%" y="-60%" width="108%" height="220%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
     <!-- Background -->
     <rect width="1200" height="108" fill="url(#bg-grad)"/>
@@ -783,9 +820,9 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
     <line x1="900" y1="0" x2="900" y2="108" stroke="#162030" stroke-width="0.5"/>
     <line x1="1050" y1="0" x2="1050" y2="108" stroke="#162030" stroke-width="0.5"/>
     <!-- Oscilloscope waveform (teal) -->
-    <polyline points="0,54 30,54 38,28 46,80 54,16 62,92 70,38 78,70 86,54 120,54" stroke="#00C8C0" stroke-width="1.3" fill="none" opacity="0.55"/>
+    <polyline points="0,54 30,54 38,28 46,80 54,16 62,92 70,38 78,70 86,54 120,54" stroke="#00C8C0" stroke-width="1.5" fill="none" opacity="0.7" filter="url(#glow-teal)"/>
     <!-- Neural curve (purple) -->
-    <path d="M120,54 C180,54 195,8 240,8 C285,8 300,100 345,100 C390,100 405,8 450,8 C495,8 510,100 555,100 C600,100 615,54 1200,54" stroke="#8B5CF6" stroke-width="1.6" fill="none" opacity="0.35"/>
+    <path d="M120,54 C180,54 195,8 240,8 C285,8 300,100 345,100 C390,100 405,8 450,8 C495,8 510,100 555,100 C600,100 615,54 1200,54" stroke="#8B5CF6" stroke-width="1.8" fill="none" opacity="0.5" filter="url(#glow-purple)"/>
     <!-- Scan line glow -->
     <rect x="0" y="51" width="1200" height="6" fill="url(#scan-h)"/>
     <!-- Intersection accent dots -->
@@ -1259,10 +1296,13 @@ function bindDrag(el, getV, onMove, onDrop) {
     e.preventDefault(); e.stopPropagation();
     try { el.setPointerCapture(e.pointerId); } catch(_) {}
     isDragging = true;
+    const track = el.classList.contains('fader-track') ? el : el.closest('.fader-track');
+    if (track) track.classList.add('dragging');
     const sy = e.clientY, sv = getV();
     function move(e2) { onMove(sy, e2.clientY, sv); }
     function up() {
       isDragging = false;
+      if (track) track.classList.remove('dragging');
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', up);
