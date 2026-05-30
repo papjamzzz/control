@@ -335,6 +335,7 @@ def run_bridge(cfg: dict) -> None:
                             event = "▶ PLAY — no task queued"
                         render_state(state, event)
 
+
                 if changed:
                     write_state(state)
                     render_state(state, event)
