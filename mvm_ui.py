@@ -125,24 +125,31 @@ def run_task():
 
 @app.route("/exec", methods=["POST"])
 def exec_task():
-    """Spawn a real ctrl run — full Claude Code with file access."""
+    """Run Claude Code directly with current fader state — full file access."""
     import subprocess, shutil as _shutil
     data = request.get_json() or {}
     task = data.get("task", "").strip()
     if not task:
         return jsonify({"error": "No task provided"}), 400
 
-    ctrl_bin = _shutil.which("ctrl") or str(Path(__file__).resolve().parent / "ctrl")
     pid_file  = Path.home() / ".streamfader" / "ctrl.pid"
     last_file = Path.home() / ".streamfader" / "last_task.txt"
+
+    # Build the claude command directly — bypass ctrl run to keep stdout attached
+    state = read_state()
+    try:
+        cmd = _ctrl.build_cmd(state, task)
+    except SystemExit as e:
+        return jsonify({"error": f"claude not found in PATH: {e}"}), 500
 
     def generate():
         try:
             proc = subprocess.Popen(
-                [ctrl_bin, "run", task],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True, bufsize=1,
+                env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
             try:
                 pid_file.parent.mkdir(parents=True, exist_ok=True)
