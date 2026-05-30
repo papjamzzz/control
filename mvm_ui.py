@@ -39,6 +39,87 @@ else:
 
 app = Flask(__name__)
 
+# ── Agentic tools ──────────────────────────────────────────────────────────────
+
+TOOLS = [
+    {
+        "name": "read_file",
+        "description": "Read the contents of a file.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "write_file",
+        "description": "Write content to a file. Creates directories if needed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path":    {"type": "string"},
+                "content": {"type": "string"},
+            },
+            "required": ["path", "content"],
+        },
+    },
+    {
+        "name": "list_directory",
+        "description": "List files and directories at a path.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "run_command",
+        "description": "Run a shell command and return stdout + stderr.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"command": {"type": "string"}},
+            "required": ["command"],
+        },
+    },
+]
+
+
+def _execute_tool(name: str, inputs: dict) -> str:
+    import subprocess as _sp
+    try:
+        if name == "read_file":
+            p = Path(inputs["path"]).expanduser()
+            if not p.exists():
+                return f"Error: not found: {p}"
+            if p.stat().st_size > 500_000:
+                return f"Error: file too large (>{500_000} bytes)"
+            return p.read_text(errors="replace")
+
+        elif name == "write_file":
+            p = Path(inputs["path"]).expanduser()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(inputs["content"])
+            return f"Wrote {len(inputs['content'])} chars to {p}"
+
+        elif name == "list_directory":
+            p = Path(inputs["path"]).expanduser()
+            if not p.exists():
+                return f"Error: not found: {p}"
+            lines = []
+            for item in sorted(p.iterdir()):
+                lines.append(f"{'[dir] ' if item.is_dir() else '[file]'} {item.name}")
+            return "\n".join(lines) if lines else "(empty)"
+
+        elif name == "run_command":
+            r = _sp.run(inputs["command"], shell=True, capture_output=True, text=True, timeout=60)
+            out = (r.stdout + r.stderr).strip()
+            return out[:20_000] if out else "(no output)"
+
+        return f"Unknown tool: {name}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
 # ── State ─────────────────────────────────────────────────────────────────────
 
 def read_state() -> dict:
@@ -125,49 +206,73 @@ def run_task():
 
 @app.route("/exec", methods=["POST"])
 def exec_task():
-    """Run Claude Code directly with current fader state — full file access."""
-    import subprocess, shutil as _shutil
+    """Agentic loop — Claude with file tools, runs entirely in Flask, no CLI needed."""
     data = request.get_json() or {}
     task = data.get("task", "").strip()
     if not task:
         return jsonify({"error": "No task provided"}), 400
 
-    pid_file  = Path.home() / ".streamfader" / "ctrl.pid"
-    last_file = Path.home() / ".streamfader" / "last_task.txt"
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not _anthropic:
+        return jsonify({"error": "anthropic package not installed"}), 500
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not set"}), 500
 
-    # Build the claude command directly — bypass ctrl run to keep stdout attached
-    state = read_state()
-    try:
-        cmd = _ctrl.build_cmd(state, task)
-    except SystemExit as e:
-        return jsonify({"error": f"claude not found in PATH: {e}"}), 500
+    state  = read_state()
+    system = _build_prompt(state)
+    cwd    = str(Path.home())
 
     def generate():
+        client   = _anthropic.Anthropic(api_key=api_key)
+        messages = [{"role": "user", "content": f"[Working directory: {cwd}]\n\n{task}"}]
+
         try:
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True, bufsize=1,
-                env={**os.environ, "PYTHONUNBUFFERED": "1"},
-            )
+            Path.home().joinpath(".streamfader", "last_task.txt").write_text(task)
+        except Exception:
+            pass
+
+        for _turn in range(20):  # hard cap on agentic turns
+            collected = []
             try:
-                pid_file.parent.mkdir(parents=True, exist_ok=True)
-                pid_file.write_text(str(proc.pid))
-                last_file.write_text(task)
-            except Exception:
-                pass
-            for line in iter(proc.stdout.readline, ""):
-                yield f"data: {json.dumps({'text': line})}\n\n"
-            proc.wait()
-            yield f"data: {json.dumps({'done': True, 'exit_code': proc.returncode})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        finally:
-            try:
-                pid_file.unlink(missing_ok=True)
-            except Exception:
-                pass
+                with client.messages.stream(
+                    model=MODEL,
+                    max_tokens=8096,
+                    system=system,
+                    tools=TOOLS,
+                    messages=messages,
+                ) as stream:
+                    for event in stream:
+                        t = getattr(event, "type", "")
+                        if t == "content_block_delta":
+                            txt = getattr(getattr(event, "delta", None), "text", None)
+                            if txt:
+                                yield f"data: {json.dumps({'text': txt})}\n\n"
+                    final = stream.get_final_message()
+                    collected = final.content
+                    stop     = final.stop_reason
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                return
+
+            if stop != "tool_use":
+                yield f"data: {json.dumps({'done': True})}\n\n"
+                return
+
+            tool_results = []
+            for blk in collected:
+                if getattr(blk, "type", "") == "tool_use":
+                    yield f"data: {json.dumps({'tool': blk.name, 'input': blk.input})}\n\n"
+                    result = _execute_tool(blk.name, blk.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": blk.id,
+                        "content": result,
+                    })
+
+            messages.append({"role": "assistant", "content": collected})
+            messages.append({"role": "user",      "content": tool_results})
+
+        yield f"data: {json.dumps({'done': True})}\n\n"
 
     return Response(generate(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -796,7 +901,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 
     <!-- CTRL RUN LAUNCHER -->
     <div class="launch-wrap">
-      <input class="launch-input" id="launch-input" type="text" placeholder="type a task and hit Enter — launches ctrl run with current fader state">
+      <input class="launch-input" id="launch-input" type="text" placeholder="type a task · Enter to run — reads and writes files, no terminal needed">
       <span class="launch-running" id="launch-running">● RUNNING</span>
       <button class="launch-btn" id="launch-btn">LAUNCH</button>
     </div>
@@ -1338,6 +1443,8 @@ const launchInput   = document.getElementById('launch-input');
 const launchBtn     = document.getElementById('launch-btn');
 const launchRunning = document.getElementById('launch-running');
 
+const TOOL_ICONS = {read_file:'📖',write_file:'✏️',list_directory:'📂',run_command:'⚡'};
+
 async function launchTask() {
   const task = launchInput.value.trim();
   if (!task || launchBtn.disabled) return;
@@ -1357,8 +1464,8 @@ async function launchTask() {
     room:      (lastState.room      ?? 0).toFixed(2),
     decay:     (lastState.decay     ?? 0).toFixed(2),
   };
-  let output = '';
-  const done = () => {
+  let textOutput = ''; let fullLog = '';
+  const finish = () => {
     launchBtn.disabled = false; launchBtn.textContent = 'LAUNCH';
     launchRunning.classList.remove('show');
   };
@@ -1372,12 +1479,27 @@ async function launchTask() {
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const d = JSON.parse(line.slice(6));
-        if (d.text) output += d.text;
-        if (d.error) { done(); }
+        if (d.text) {
+          textOutput += d.text;
+          fullLog    += d.text;
+        }
+        if (d.tool) {
+          const icon  = TOOL_ICONS[d.tool] || '🔧';
+          const label = d.tool === 'read_file'  ? d.input.path  :
+                        d.tool === 'write_file' ? d.input.path  :
+                        d.tool === 'list_directory' ? d.input.path :
+                        d.input.command || '';
+          const tag = `\n[${icon} ${d.tool}: ${label}]\n`;
+          fullLog += tag;
+        }
+        if (d.error) {
+          fullLog += `\n[error: ${d.error}]`;
+          finish();
+        }
         if (d.done) {
-          done();
-          if (output) {
-            history.unshift({t:new Date().toLocaleTimeString(), task, resp:output, ...snap});
+          finish();
+          if (fullLog) {
+            history.unshift({t:new Date().toLocaleTimeString(), task, resp:fullLog, ...snap});
             if (history.length > 30) history.pop();
             saveHistory(); renderHistory();
             launchInput.value = '';
@@ -1385,7 +1507,7 @@ async function launchTask() {
         }
       }
     }
-  } catch(e) { done(); }
+  } catch(e) { finish(); }
 }
 launchBtn.addEventListener('click', launchTask);
 launchInput.addEventListener('keydown', e => { if (e.key === 'Enter') launchTask(); });
