@@ -4,6 +4,7 @@
 import json
 import time
 import os
+import importlib.util
 from pathlib import Path
 from flask import Flask, Response, request, jsonify
 
@@ -23,154 +24,17 @@ PORT  = int(os.environ.get("PORT", 5570))
 MODEL = os.environ.get("CTRL_MODEL", "claude-sonnet-4-6")
 
 
-# ── Prompt builder ────────────────────────────────────────────────────────────
-
-def _build_prompt(state: dict) -> str:
-    mode      = state["mode"]
-    intensity = state["intensity"]
-    depth     = state["depth"]
-
-    if mode == "EXPLORE":
-        mode_rules = (
-            "MODE: EXPLORE\n"
-            "- Analysis only. No code changes.\n"
-            "- End with a single decision point. Nothing else."
-        )
-    elif mode == "FIX":
-        mode_rules = (
-            "MODE: FIX\n"
-            "- Identify one root cause only.\n"
-            "- Produce one fix only.\n"
-            "- Do not address secondary issues."
-        )
-    else:
-        mode_rules = (
-            "MODE: BUILD\n"
-            "- Implement one atomic change only.\n"
-            "- No refactoring unless explicitly required."
-        )
-
-    if intensity >= 0.7:
-        intensity_rule = "INTENSITY: HIGH — minimal output, direct execution only."
-    elif intensity >= 0.4:
-        intensity_rule = "INTENSITY: MED — concise reasoning, focused output."
-    else:
-        intensity_rule = "INTENSITY: LOW — verbose reasoning, exploratory tone."
-
-    if depth >= 0.7:
-        depth_rule = "DEPTH: HIGH — deeper diagnostic reasoning allowed."
-    elif depth >= 0.4:
-        depth_rule = "DEPTH: MED — moderate analysis depth."
-    else:
-        depth_rule = "DEPTH: LOW — surface-level reasoning only."
-
-    certainty = state.get("certainty", 0.5)
-    risk      = state.get("risk",      0.5)
-    stance    = state.get("stance",    "GUIDE")
-
-    if certainty >= 0.7:
-        certainty_rule = "CERTAINTY: HIGH — commit to one solution, do not present alternatives."
-    elif certainty >= 0.4:
-        certainty_rule = "CERTAINTY: MED — give a recommendation with brief reasoning."
-    else:
-        certainty_rule = "CERTAINTY: LOW — show 2-3 approaches with pros and cons, do not pick."
-
-    if risk >= 0.7:
-        risk_rule = "RISK: HIGH — best solution even if it requires significant changes."
-    elif risk >= 0.4:
-        risk_rule = "RISK: MED — balanced approach, prefer existing patterns where reasonable."
-    else:
-        risk_rule = "RISK: LOW — stay close to existing patterns, minimal disruption."
-
-    if stance == "LIST":
-        stance_rule = "STANCE: LIST — present alternatives only, do not implement anything."
-    elif stance == "DECIDE":
-        stance_rule = "STANCE: DECIDE — pick one approach and implement it, zero explanation of alternatives."
-    else:
-        stance_rule = "STANCE: GUIDE — give your best recommendation with brief reasoning, then implement."
-
-    scope     = state.get("scope",     0.5)
-    bandwidth = state.get("bandwidth", 0.5)
-    filter_   = state.get("filter",    "MODULE")
-
-    if scope >= 0.7:
-        scope_rule = "SCOPE: WIDE — consider the full codebase, pull in all related context."
-    elif scope >= 0.4:
-        scope_rule = "SCOPE: MED — consider this module and its direct dependencies."
-    else:
-        scope_rule = "SCOPE: NARROW — stay inside the immediate file or function only."
-
-    if bandwidth >= 0.7:
-        bandwidth_rule = "BANDWIDTH: WIDE — broad strokes, pull in adjacent concerns freely."
-    elif bandwidth >= 0.4:
-        bandwidth_rule = "BANDWIDTH: MED — shaped focus, related things welcome if directly relevant."
-    else:
-        bandwidth_rule = "BANDWIDTH: NARROW — surgical precision, touch nothing adjacent."
-
-    if filter_ == "FILE":
-        filter_rule = "FILTER: FILE — strict local scope, this file only, no cross-module context."
-    elif filter_ == "PROJECT":
-        filter_rule = "FILTER: PROJECT — full project scope allowed, global context welcome."
-    else:
-        filter_rule = "FILTER: MODULE — shaped band around the module, selective context."
-
-    room  = state.get("room",  0.3)
-    decay = state.get("decay", 0.3)
-    voice = state.get("voice", "STUDIO")
-
-    if room >= 0.7:
-        room_rule = "ROOM: WET — open space around your output, breathing room, think out loud."
-    elif room >= 0.4:
-        room_rule = "ROOM: MED — some space, conversational but not dry."
-    else:
-        room_rule = "ROOM: DRY — close-mic'd, no space, just the output."
-
-    if decay >= 0.7:
-        decay_rule = "DECAY: LONG — ideas can echo and build, spacious language."
-    elif decay >= 0.4:
-        decay_rule = "DECAY: MED — moderate density, words earn their place."
-    else:
-        decay_rule = "DECAY: SHORT — tight, compressed, every word counts."
-
-    if voice == "DIRECT":
-        voice_rule = "VOICE: DIRECT — dead room, output only, zero commentary or preamble."
-    elif voice == "OPEN":
-        voice_rule = "VOICE: OPEN — full resonance, collaborative, thinks out loud with you."
-    else:
-        voice_rule = "VOICE: STUDIO — professional, measured, clean response with minimal framing."
-
-    state_block = json.dumps(state)
-
-    return "\n".join([
-        mode_rules,
-        intensity_rule,
-        depth_rule,
-        certainty_rule,
-        risk_rule,
-        stance_rule,
-        scope_rule,
-        bandwidth_rule,
-        filter_rule,
-        room_rule,
-        decay_rule,
-        voice_rule,
-        "",
-        "GLOBAL CONSTRAINTS:",
-        "- One action per run.",
-        "- No multi-step planning chains.",
-        "- No combined modes.",
-        "- Stop immediately after completing the task.",
-        "",
-        "OUTPUT FORMAT:",
-        "STATE:",
-        state_block,
-        "",
-        "ACTION:",
-        "<what you will do — one line>",
-        "",
-        "RESULT:",
-        "<final output>",
-    ])
+# Load build_system_prompt from ctrl script without importing the whole CLI
+import importlib.machinery
+_ctrl_path = Path(__file__).resolve().parent / "ctrl"
+if _ctrl_path.exists():
+    _loader = importlib.machinery.SourceFileLoader("_ctrl", str(_ctrl_path))
+    _spec   = importlib.util.spec_from_loader("_ctrl", _loader)
+    _ctrl   = importlib.util.module_from_spec(_spec)
+    _loader.exec_module(_ctrl)
+    _build_prompt = _ctrl.build_system_prompt
+else:
+    _build_prompt = lambda s: "You are a helpful AI assistant."
 
 
 app = Flask(__name__)
@@ -259,6 +123,49 @@ def run_task():
     return Response(generate(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
+@app.route("/exec", methods=["POST"])
+def exec_task():
+    """Spawn a real ctrl run — full Claude Code with file access."""
+    import subprocess, shutil as _shutil
+    data = request.get_json() or {}
+    task = data.get("task", "").strip()
+    if not task:
+        return jsonify({"error": "No task provided"}), 400
+
+    ctrl_bin = _shutil.which("ctrl") or str(Path(__file__).resolve().parent / "ctrl")
+    pid_file  = Path.home() / ".streamfader" / "ctrl.pid"
+    last_file = Path.home() / ".streamfader" / "last_task.txt"
+
+    def generate():
+        try:
+            proc = subprocess.Popen(
+                [ctrl_bin, "run", task],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True, bufsize=1,
+            )
+            try:
+                pid_file.parent.mkdir(parents=True, exist_ok=True)
+                pid_file.write_text(str(proc.pid))
+                last_file.write_text(task)
+            except Exception:
+                pass
+            for line in iter(proc.stdout.readline, ""):
+                yield f"data: {json.dumps({'text': line})}\n\n"
+            proc.wait()
+            yield f"data: {json.dumps({'done': True, 'exit_code': proc.returncode})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            try:
+                pid_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    return Response(generate(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @app.route("/health")
 def health():
     return jsonify({"ok": True, "model": MODEL,
@@ -276,23 +183,23 @@ HTML = r"""<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:        #18140F;
-  --panel:     #201C16;
-  --panel2:    #2A2520;
-  --border:    #3A3228;
-  --border2:   #4A4238;
+  --bg:        #16191C;
+  --panel:     #1E2226;
+  --panel2:    #272C32;
+  --border:    #2E3439;
+  --border2:   #3C444C;
   --accent:    #C8922A;
   --accent2:   #E8A830;
   --green:     #6EE7B7;
-  --text:      #D4C8B0;
-  --text2:     #7A6E5E;
-  --text3:     #4A4238;
-  --chrome:    #8A8070;
-  --chrome2:   #C0B8A8;
-  --fader-bg:  #110E0A;
-  --fader-trk: #0E0B08;
-  --thumb-hi:  #D8CEB8;
-  --thumb-lo:  #706050;
+  --text:      #C8D0D8;
+  --text2:     #62707C;
+  --text3:     #424C56;
+  --chrome:    #7A8490;
+  --chrome2:   #B8C4CC;
+  --fader-bg:  #0E1114;
+  --fader-trk: #0A0D10;
+  --thumb-hi:  #C8D0D8;
+  --thumb-lo:  #48545E;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);height:100vh;display:flex;flex-direction:column;user-select:none;overflow:hidden;}
@@ -301,7 +208,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .hdr{
   padding:0 16px;
   border-bottom:1px solid var(--border);
-  background:#100D09;
+  background:#111416;
   display:flex;align-items:center;gap:10px;
   flex-shrink:0;height:42px;
 }
@@ -338,9 +245,10 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .channel-bank{
   width:148px;flex-shrink:0;
   display:flex;flex-direction:column;
-  background:var(--panel);
+  background:linear-gradient(180deg,#1A1E22 0%,#141820 100%);
   border-right:1px solid var(--border);
   overflow:hidden;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.03);
 }
 .channel-bank.right{border-right:none;border-left:1px solid var(--border);}
 .bank-hd{
@@ -348,7 +256,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   font-size:8px;font-weight:800;letter-spacing:.22em;
   color:var(--text3);text-transform:uppercase;
   border-bottom:1px solid var(--border);
-  background:#100D09;flex-shrink:0;
+  background:#111416;flex-shrink:0;
 }
 
 /* each individual channel strip */
@@ -356,7 +264,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   flex:1;display:flex;flex-direction:column;align-items:center;
   border-bottom:1px solid var(--border);
   padding:10px 6px 8px;gap:0;min-height:0;overflow:hidden;
-  background:var(--panel);
+  background:linear-gradient(160deg,#252A2F 0%,#1A1E22 40%,#1E2226 100%);
   position:relative;
 }
 .ch:last-child{border-bottom:none;}
@@ -409,20 +317,20 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 /* the groove/track */
 .fader-track{
   width:10px;flex:1;
-  background:linear-gradient(180deg,#0A0806 0%,#0E0C09 50%,#0A0806 100%);
-  border:1px solid var(--border);
-  border-radius:3px;
+  background:linear-gradient(180deg,#08090C 0%,#0C0E12 50%,#08090C 100%);
+  border:1px solid #1A2028;
+  border-radius:2px;
   position:relative;
   cursor:ns-resize;
   touch-action:none;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.03);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.9),inset 0 0 0 1px rgba(255,255,255,.04),0 0 0 1px rgba(255,255,255,.02);
 }
 /* fill bar inside groove */
 .fader-fill{
   position:absolute;bottom:0;left:0;right:0;
   border-radius:3px;
   background:linear-gradient(0deg,var(--accent) 0%,var(--accent2) 60%,#E8C060 100%);
-  opacity:.55;
+  opacity:.28;
   pointer-events:none;
 }
 
@@ -433,20 +341,20 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   left:50%;transform:translateX(-50%);
   cursor:ns-resize;z-index:3;touch-action:none;
   border-radius:3px;
-  /* machined metal look */
+  /* machined steel look */
   background:linear-gradient(180deg,
     var(--thumb-hi) 0%,
-    #B0A898 18%,
-    #706050 35%,
-    #504038 48%,
-    #504038 52%,
-    #706050 65%,
-    #B0A898 82%,
+    #A8B4BC 18%,
+    #58666E 35%,
+    #38444C 48%,
+    #38444C 52%,
+    #58666E 65%,
+    #A8B4BC 82%,
     var(--thumb-hi) 100%
   );
-  border:1px solid #2A2018;
-  border-top-color:#D8CEB8;
-  border-bottom-color:#282018;
+  border:1px solid #1C2830;
+  border-top-color:#C8D4DC;
+  border-bottom-color:#18222A;
   box-shadow:
     0 2px 6px rgba(0,0,0,.6),
     0 0 0 1px rgba(255,255,255,.08),
@@ -498,7 +406,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 /* inner body */
 .knob-body{
   position:absolute;inset:4px;border-radius:50%;
-  background:radial-gradient(circle at 38% 32%,#504840,#28201A);
+  background:radial-gradient(circle at 38% 32%,#3A4450,#141C24);
   border:1px solid rgba(0,0,0,.5);
   box-shadow:inset 0 1px 3px rgba(255,255,255,.06);
 }
@@ -533,39 +441,39 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 }
 .ch-btn:hover{background:var(--panel2);border-color:var(--accent);color:var(--accent2);}
 .ch-btn.active{
-  background:linear-gradient(180deg,#2A2010,#1C180C);
+  background:linear-gradient(180deg,#1A1E10,#12160A);
   color:var(--accent2);border-color:var(--accent);
-  box-shadow:0 0 8px rgba(200,146,42,.2),inset 0 1px 0 rgba(255,255,255,.04);
+  box-shadow:0 0 8px rgba(200,146,42,.25),inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 /* ── CENTER MONITORING PANEL ───────────────────────────── */
 .monitor{
   flex:1;display:flex;flex-direction:column;
-  overflow:hidden;background:#100D09;min-width:0;
+  overflow:hidden;background:#111416;min-width:0;
 }
 .panel-hd{
-  padding:4px 14px;font-size:8px;font-weight:800;
-  letter-spacing:.24em;color:var(--text3);text-transform:uppercase;
-  border-bottom:1px solid var(--border);background:#0D0A07;flex-shrink:0;
+  padding:4px 14px;font-size:9px;font-weight:800;
+  letter-spacing:.24em;color:var(--chrome);text-transform:uppercase;
+  border-bottom:1px solid var(--border);background:#0E1114;flex-shrink:0;
 }
 
 /* METERS */
 .meters-wrap{padding:8px 14px 7px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.section-hd{font-size:8px;font-weight:800;letter-spacing:.22em;color:var(--text3);text-transform:uppercase;margin-bottom:6px;}
+.section-hd{font-size:9px;font-weight:800;letter-spacing:.22em;color:var(--chrome2);text-transform:uppercase;margin-bottom:6px;}
 .meters-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;}
 .meter-row{display:flex;align-items:center;gap:5px;}
-.meter-lbl{font-size:8px;color:var(--text3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:56px;flex-shrink:0;}
+.meter-lbl{font-size:9px;color:var(--text);font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:60px;flex-shrink:0;}
 .meter-track{flex:1;height:4px;background:#0A0806;border-radius:2px;overflow:hidden;border:1px solid var(--border);}
 .meter-fill{height:100%;background:linear-gradient(90deg,#4A8060 0%,var(--accent) 65%,#E8A030 100%);transition:width .12s ease;border-radius:1px;}
-.meter-val{font-size:8px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums;width:24px;text-align:right;flex-shrink:0;}
-.meter-lvl{font-size:7px;font-weight:800;letter-spacing:.04em;width:22px;flex-shrink:0;}
+.meter-val{font-size:10px;font-weight:700;color:var(--accent2);font-variant-numeric:tabular-nums;width:28px;text-align:right;flex-shrink:0;}
+.meter-lvl{font-size:8px;font-weight:800;letter-spacing:.04em;width:26px;flex-shrink:0;}
 .lvl-low{color:#4A8060;}.lvl-med{color:var(--accent);}.lvl-high{color:#E8A030;}
 
 /* PILLS */
 .pills-wrap{padding:5px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap;}
 .pill-group{display:flex;align-items:center;gap:4px;}
-.pill-lbl{font-size:7px;color:var(--text3);font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
-.pill{padding:2px 7px;border-radius:2px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;}
+.pill-lbl{font-size:8px;color:var(--chrome);font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+.pill{padding:2px 8px;border-radius:2px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;}
 
 /* PREVIEW RUN */
 .preview-wrap{padding:8px 14px 7px;border-bottom:1px solid var(--border);flex-shrink:0;}
@@ -573,6 +481,33 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .preview-hd{font-size:8px;font-weight:800;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;}
 .api-tag{font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;background:rgba(200,146,42,.1);color:#A87820;letter-spacing:.04em;border:1px solid rgba(200,146,42,.25);}
 .task-row{display:flex;gap:6px;align-items:center;}
+.launch-wrap{
+  padding:10px 14px 8px;border-bottom:1px solid var(--border);
+  display:flex;gap:7px;align-items:center;flex-shrink:0;
+}
+.launch-input{
+  flex:1;height:32px;border:1px solid var(--border2);border-radius:3px;
+  background:#0A0D10;padding:0 10px;
+  font-family:'Inter',sans-serif;font-size:12px;color:var(--text);
+  outline:none;transition:border-color .15s;user-select:text;
+}
+.launch-input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(110,231,183,.07);}
+.launch-input::placeholder{color:var(--text3);}
+.launch-btn{
+  height:32px;padding:0 16px;
+  background:linear-gradient(180deg,#0E2820,#091C14);
+  color:var(--green);
+  border:1px solid rgba(110,231,183,.35);
+  border-radius:3px;
+  font-family:'Inter',sans-serif;font-size:9px;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;
+  cursor:pointer;transition:all .12s;white-space:nowrap;
+  box-shadow:0 0 8px rgba(110,231,183,.10);
+}
+.launch-btn:hover{background:linear-gradient(180deg,#122E22,#0D2018);box-shadow:0 0 14px rgba(110,231,183,.2);}
+.launch-btn:disabled{opacity:.3;cursor:not-allowed;box-shadow:none;}
+.launch-running{font-size:9px;color:var(--green);letter-spacing:.06em;display:none;}
+.launch-running.show{display:block;}
 .task-input{
   flex:1;height:30px;border:1px solid var(--border2);border-radius:3px;
   background:#0A0806;padding:0 10px;
@@ -605,8 +540,20 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 }
 .resp-box .err{color:#E05050;font-weight:600;}
 
+/* LIVE PROMPT PREVIEW */
+.prompt-preview-wrap{flex:1;display:flex;flex-direction:column;min-height:0;border-bottom:1px solid var(--border);}
+.prompt-preview-hd{padding:4px 14px;font-size:9px;font-weight:800;letter-spacing:.22em;color:var(--chrome);text-transform:uppercase;border-bottom:1px solid var(--border);background:#0E1114;flex-shrink:0;}
+.prompt-preview-box{flex:1;overflow-y:auto;padding:8px 14px;font-family:monospace;font-size:9.5px;line-height:1.6;color:var(--text2);white-space:pre-wrap;word-break:break-word;}
+.prompt-preview-box .pp-key{color:var(--accent2);font-weight:700;}
+.prompt-preview-box .pp-val{color:var(--text);}
+
+/* INFO BOX */
+.info-wrap{flex-shrink:0;border-top:1px solid var(--border);padding:7px 14px;background:#0E1114;min-height:62px;display:flex;flex-direction:column;justify-content:center;}
+.info-label{font-size:9px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+.info-text{font-size:11px;color:var(--text);line-height:1.5;}
+
 /* HISTORY */
-.history-wrap{flex:1;overflow-y:auto;padding:7px 14px 10px;min-height:0;}
+.history-wrap{flex-shrink:0;height:90px;overflow-y:auto;padding:6px 14px 8px;border-top:1px solid var(--border);}
 .history-empty{font-size:11px;color:var(--text3);font-style:italic;text-align:center;padding:14px 0;}
 .history-hd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .clear-btn{height:20px;padding:0 8px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:8px;font-weight:700;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .1s;}
@@ -656,13 +603,20 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 
 <!-- ── HEADER ─────────────────────────────────────────────────── -->
 <div class="hdr">
-  <svg class="logo-mark" width="40" height="20" viewBox="0 0 40 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="40" height="20" rx="2" fill="#0A0806"/>
-    <line x1="2" y1="10" x2="38" y2="10" stroke="#3A3228" stroke-width="0.5"/>
-    <line x1="20" y1="1" x2="20" y2="19" stroke="#4A4238" stroke-width="0.8" stroke-dasharray="2,1.5"/>
-    <polyline points="2,10 4,5 6,15 8,3 10,16 12,7 14,12 16,2 18,14 20,10" stroke="#F59E0B" stroke-width="1.2" stroke-linejoin="round" fill="none"/>
-    <path d="M20,10 C22.5,10 23.5,3 25,3 C26.5,3 27.5,17 29,17 C30.5,17 31.5,3 33,3 C34.5,3 35.5,10 38,10" stroke="#C8922A" stroke-width="1.2" fill="none"/>
-    <rect width="40" height="20" rx="2" fill="none" stroke="#3A3228" stroke-width="1"/>
+  <svg class="logo-mark" width="56" height="28" viewBox="0 0 56 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="56" height="28" rx="3" fill="#071410"/>
+    <rect x="2" y="2" width="52" height="24" rx="2" fill="#0B1E15"/>
+    <line x1="2" y1="10" x2="54" y2="10" stroke="#183325" stroke-width="0.5"/>
+    <line x1="2" y1="14" x2="54" y2="14" stroke="#183325" stroke-width="0.5"/>
+    <line x1="2" y1="18" x2="54" y2="18" stroke="#183325" stroke-width="0.5"/>
+    <line x1="28" y1="2" x2="28" y2="26" stroke="#3A6A4A" stroke-width="0.8" stroke-dasharray="2,2"/>
+    <polyline points="3,14 5,9 7,19 9,7 11,20 13,11 15,17 17,6 19,18 21,14 28,14" stroke="#F59E0B" stroke-width="1.3" stroke-linejoin="round" fill="none"/>
+    <path d="M28,14 C31,14 32,5 34,5 C36,5 37,23 39,23 C41,23 42,5 44,5 C46,5 47,14 53,14" stroke="#6EE7B7" stroke-width="1.8" fill="none"/>
+    <circle cx="4" cy="4" r="1.2" fill="#1E3D28"/>
+    <circle cx="52" cy="4" r="1.2" fill="#1E3D28"/>
+    <circle cx="4" cy="24" r="1.2" fill="#1E3D28"/>
+    <circle cx="52" cy="24" r="1.2" fill="#1E3D28"/>
+    <rect width="56" height="28" rx="3" fill="none" stroke="#2A5A3A" stroke-width="1"/>
   </svg>
   <span class="brand">control</span>
   <div class="hdr-sep"></div>
@@ -684,48 +638,6 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
     </defs>
     <rect width="1200" height="108" fill="url(#sky)"/>
 
-    <!-- OSCILLOSCOPE SCREEN -->
-    <rect x="348" y="10" width="392" height="74" rx="6" fill="#071410"/>
-    <rect x="353" y="15" width="382" height="64" rx="3" fill="#0B1E15"/>
-    <line x1="353" y1="36" x2="735" y2="36" stroke="#183325" stroke-width="0.7"/>
-    <line x1="353" y1="47" x2="735" y2="47" stroke="#183325" stroke-width="0.7"/>
-    <line x1="353" y1="58" x2="735" y2="58" stroke="#183325" stroke-width="0.7"/>
-    <line x1="448" y1="15" x2="448" y2="79" stroke="#183325" stroke-width="0.7"/>
-    <line x1="543" y1="15" x2="543" y2="79" stroke="#183325" stroke-width="0.7"/>
-    <line x1="638" y1="15" x2="638" y2="79" stroke="#183325" stroke-width="0.7"/>
-    <!-- divider -->
-    <line x1="543" y1="10" x2="543" y2="84" stroke="#3A6A4A" stroke-width="1.2" stroke-dasharray="3,2.5"/>
-    <!-- chaotic amber -->
-    <path d="M357,47 L362,33 L367,60 L372,28 L377,64 L382,37 L387,58 L392,24 L397,65 L402,35 L407,55 L412,26 L417,62 L422,38 L427,56 L432,23 L437,61 L441,40 L447,47 L543,47"
-          stroke="#F59E0B" stroke-width="1.6" fill="none" opacity="0.9" stroke-linejoin="round"/>
-    <path d="M357,47 L362,33 L367,60 L372,28 L377,64 L382,37 L387,58 L392,24 L397,65 L402,35 L407,55 L412,26 L417,62 L422,38 L427,56 L432,23 L437,61 L441,40 L447,47 L543,47"
-          stroke="#F59E0B" stroke-width="5" fill="none" opacity="0.12" stroke-linejoin="round"/>
-    <!-- clean sine mint -->
-    <path d="M543,47 C556,47 560,19 573,19 C586,19 590,75 603,75 C616,75 620,19 633,19 C646,19 650,75 663,75 C676,75 680,19 693,19 C706,19 710,47 731,47"
-          stroke="#6EE7B7" stroke-width="6" fill="none" opacity="0.15"/>
-    <path d="M543,47 C556,47 560,19 573,19 C586,19 590,75 603,75 C616,75 620,19 633,19 C646,19 650,75 663,75 C676,75 680,19 693,19 C706,19 710,47 731,47"
-          stroke="#6EE7B7" stroke-width="2.2" fill="none"/>
-    <text x="448" y="86" font-family="monospace" font-size="5.5" fill="#F59E0B" text-anchor="middle" opacity="0.65">UNTUNED</text>
-    <text x="638" y="86" font-family="monospace" font-size="5.5" fill="#6EE7B7" text-anchor="middle" opacity="0.75">CONTROLLED</text>
-    <!-- corner screws -->
-    <circle cx="356" cy="18" r="2.2" fill="#1E3D28"/>
-    <circle cx="732" cy="18" r="2.2" fill="#1E3D28"/>
-    <circle cx="356" cy="76" r="2.2" fill="#1E3D28"/>
-    <circle cx="732" cy="76" r="2.2" fill="#1E3D28"/>
-    <rect x="348" y="10" width="392" height="74" rx="6" fill="none" stroke="#2A5A3A" stroke-width="2"/>
-    <!-- knob -->
-    <circle cx="368" cy="93" r="8" fill="#1A0A2E"/>
-    <line x1="368" y1="85" x2="368" y2="92" stroke="#FFE033" stroke-width="1.8" stroke-linecap="round"/>
-    <circle cx="368" cy="93" r="8" fill="none" stroke="#2A5A3A" stroke-width="1"/>
-    <!-- operator figure -->
-    <g transform="translate(314,100)" stroke="#1A0A2E" stroke-linecap="round" fill="none">
-      <circle cx="0" cy="-22" r="5.5" fill="#1A0A2E" stroke="none"/>
-      <line x1="0" y1="-16" x2="0" y2="-4" stroke-width="2.5"/>
-      <line x1="0" y1="-10" x2="-8" y2="-3" stroke-width="2"/>
-      <line x1="0" y1="-10" x2="50" y2="-16" stroke-width="2"/>
-      <line x1="0" y1="-4" x2="-5" y2="9" stroke-width="2"/>
-      <line x1="0" y1="-4" x2="5" y2="9" stroke-width="2"/>
-    </g>
 
     <!-- TIM BURTON CITY (right) -->
     <rect x="748" y="68" width="4" height="40" fill="#1A0A2E"/>
@@ -751,7 +663,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
     <rect x="1079" y="72" width="121" height="36" fill="#1A0A2E"/>
 
     <!-- SUN -->
-    <g transform="translate(1110,22)">
+    <g transform="translate(1110,42)">
       <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300"/>
       <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(45)"/>
       <polygon points="0,-36 -5,-24 5,-24" fill="#FFB300" transform="rotate(90)"/>
@@ -875,6 +787,13 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
       <div class="pill-group"><span class="pill-lbl">VOICE</span><div class="pill" id="pill-voice">—</div></div>
     </div>
 
+    <!-- CTRL RUN LAUNCHER -->
+    <div class="launch-wrap">
+      <input class="launch-input" id="launch-input" type="text" placeholder="type a task and hit Enter — launches ctrl run with current fader state">
+      <span class="launch-running" id="launch-running">● RUNNING</span>
+      <button class="launch-btn" id="launch-btn">LAUNCH</button>
+    </div>
+
     <div class="preview-wrap">
       <div class="preview-top">
         <span class="preview-hd">PREVIEW RUN</span>
@@ -889,6 +808,19 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
       </div>
     </div>
 
+    <!-- LIVE PROMPT PREVIEW -->
+    <div class="prompt-preview-wrap">
+      <div class="prompt-preview-hd">LIVE PROMPT</div>
+      <div class="prompt-preview-box" id="prompt-preview">—</div>
+    </div>
+
+    <!-- INFO BOX -->
+    <div class="info-wrap">
+      <div class="info-label" id="info-label">hover any control</div>
+      <div class="info-text" id="info-text">Move a fader, knob, or button to see what it does.</div>
+    </div>
+
+    <!-- RUN LOG -->
     <div class="history-wrap">
       <div class="history-hd-row">
         <div class="section-hd">RUN LOG</div>
@@ -1044,6 +976,72 @@ const PILL_C   = ['#8A6018','#C87020','#207868','#186858'];
 let isDragging = false;
 let lastState  = {};
 
+const INFO = {
+  intensity:  ['INTENSITY',  'How hard Claude pushes. HIGH = minimal output, direct execution. LOW = verbose reasoning, exploratory tone.'],
+  depth:      ['DEPTH',      'How deep Claude diagnoses. HIGH = full root cause analysis. LOW = surface-level reasoning only.'],
+  certainty:  ['CERTAINTY',  'Commitment to one answer. HIGH = single solution, no alternatives. LOW = 2-3 approaches with pros/cons.'],
+  risk:       ['RISK',       'How bold the changes. HIGH = best solution even if significant refactor. LOW = stay close to existing patterns.'],
+  scope:      ['SCOPE',      'How wide Claude looks. HIGH = full codebase. MED = module + dependencies. LOW = this file only.'],
+  bandwidth:  ['BANDWIDTH',  'Adjacent context. HIGH = pull in everything related. LOW = surgical, touch nothing adjacent.'],
+  room:       ['ROOM',       'Space in output. WET = thinks out loud, breathing room. DRY = close-mic\'d, just the result.'],
+  decay:      ['DECAY',      'Language density. LONG = ideas echo and build. SHORT = tight and compressed, every word counts.'],
+  EXPLORE:    ['EXPLORE',    'Analysis only. No code changes. Claude maps the problem and ends with a single decision point.'],
+  FIX:        ['FIX',        'One root cause, one fix. No secondary issues touched. Scalpel, not a sledgehammer.'],
+  BUILD:      ['BUILD',      'One atomic change implemented. No refactoring unless explicitly required.'],
+  LIST:       ['LIST',       'Present alternatives only. Nothing gets implemented. Use before committing to a direction.'],
+  GUIDE:      ['GUIDE',      'Recommend then implement. Claude gives brief reasoning for its choice, then acts.'],
+  DECIDE:     ['DECIDE',     'Pick one and ship it. Zero explanation of alternatives. Maximum commitment.'],
+  FILE:       ['FILE',       'This file only. No cross-module context pulled. Strictest local scope.'],
+  MODULE:     ['MODULE',     'This module and its direct dependencies. Selective, shaped context.'],
+  PROJECT:    ['PROJECT',    'Full codebase in scope. Global context available. Pair with high SCOPE.'],
+  DIRECT:     ['DIRECT',     'Dead room. Output only — zero commentary or preamble. Just the result.'],
+  STUDIO:     ['STUDIO',     'Professional and measured. Clean response with minimal framing. Default voice.'],
+  OPEN:       ['OPEN',       'Collaborative. Claude thinks out loud with you, full reasoning visible.'],
+  MODE:       ['MODE',       'What Claude is allowed to do. EXPLORE = read only. FIX = one bug. BUILD = one change.'],
+  STANCE:     ['STANCE',     'How Claude presents its work. LIST = options only. GUIDE = recommends + acts. DECIDE = just ships.'],
+  FILTER:     ['FILTER',     'Context boundary. FILE = this file. MODULE = this module. PROJECT = full codebase.'],
+  VOICE:      ['VOICE',      'Output style. DIRECT = no commentary. STUDIO = clean + measured. OPEN = thinks out loud.'],
+};
+
+function showInfo(key) {
+  const entry = INFO[key];
+  if (!entry) return;
+  document.getElementById('info-label').textContent = entry[0];
+  document.getElementById('info-text').textContent  = entry[1];
+}
+function clearInfo() {
+  document.getElementById('info-label').textContent = 'hover any control';
+  document.getElementById('info-text').textContent  = 'Move a fader, knob, or button to see what it does.';
+}
+
+function buildPromptPreview(s) {
+  const i=s.intensity??0.5, d=s.depth??0.5, c=s.certainty??0.5, r=s.risk??0.5;
+  const sc=s.scope??0.5, bw=s.bandwidth??0.5, ro=s.room??0.3, dc=s.decay??0.3;
+  const lines = [];
+  const kv = (k,v) => `<span class="pp-key">${k}:</span> <span class="pp-val">${v}</span>`;
+  if (s.mode==='EXPLORE') lines.push(kv('MODE','EXPLORE — analysis only, no code changes'));
+  else if (s.mode==='FIX') lines.push(kv('MODE','FIX — one root cause, one fix'));
+  else lines.push(kv('MODE','BUILD — one atomic change'));
+  lines.push(kv('INTENSITY', i>=0.7?'HIGH — minimal output, direct execution':i>=0.4?'MED — concise reasoning':'LOW — verbose reasoning, exploratory'));
+  lines.push(kv('DEPTH',     d>=0.7?'HIGH — deeper diagnostic reasoning':d>=0.4?'MED — moderate analysis':'LOW — surface-level only'));
+  lines.push(kv('CERTAINTY', c>=0.7?'HIGH — one solution, no alternatives':c>=0.4?'MED — recommendation + brief reasoning':'LOW — show 2-3 approaches, do not pick'));
+  lines.push(kv('RISK',      r>=0.7?'HIGH — best solution, even if significant changes':r>=0.4?'MED — prefer existing patterns where reasonable':'LOW — stay close to existing, minimal disruption'));
+  if (s.stance==='LIST')   lines.push(kv('STANCE','LIST — present alternatives only, do not implement'));
+  else if (s.stance==='DECIDE') lines.push(kv('STANCE','DECIDE — pick one, implement it, zero explanation'));
+  else lines.push(kv('STANCE','GUIDE — recommend with brief reasoning, then implement'));
+  lines.push(kv('SCOPE',     sc>=0.7?'WIDE — full codebase':sc>=0.4?'MED — module + dependencies':'NARROW — immediate file or function only'));
+  lines.push(kv('BANDWIDTH', bw>=0.7?'WIDE — pull in adjacent concerns freely':bw>=0.4?'MED — related things welcome if relevant':'NARROW — surgical, touch nothing adjacent'));
+  if (s.filter==='FILE')    lines.push(kv('FILTER','FILE — this file only, no cross-module context'));
+  else if (s.filter==='PROJECT') lines.push(kv('FILTER','PROJECT — full project scope, global context'));
+  else lines.push(kv('FILTER','MODULE — shaped band around the module'));
+  lines.push(kv('ROOM',      ro>=0.7?'WET — open space, think out loud':ro>=0.4?'MED — some space, conversational':'DRY — close-mic\'d, no space, just output'));
+  lines.push(kv('DECAY',     dc>=0.7?'LONG — ideas echo and build':dc>=0.4?'MED — moderate density':'SHORT — tight, every word counts'));
+  if (s.voice==='DIRECT') lines.push(kv('VOICE','DIRECT — dead room, output only, zero preamble'));
+  else if (s.voice==='OPEN') lines.push(kv('VOICE','OPEN — collaborative, thinks out loud'));
+  else lines.push(kv('VOICE','STUDIO — professional, measured, clean'));
+  return lines.join('\n');
+}
+
 /* build tick marks for a fader */
 function buildTicks(containerId) {
   const c = document.getElementById(containerId); if (!c) return;
@@ -1128,6 +1126,7 @@ function applyState(s) {
   setPill('pill-stance', s.stance||'—', PILL_C[1]);
   setPill('pill-filter', s.filter||'—', PILL_C[2]);
   setPill('pill-voice',  s.voice ||'—', PILL_C[3]);
+  document.getElementById('prompt-preview').innerHTML = buildPromptPreview(s);
 }
 
 async function set(field, value) {
@@ -1162,20 +1161,53 @@ function bindDrag(el, getV, onMove, onDrop) {
 Object.entries(FADERS).forEach(([field, ids]) => {
   const trackEl = document.getElementById(ids.track);
   const thumbEl = document.getElementById(ids.thumb);
-  const getV  = () => parseFloat(document.getElementById(ids.val).textContent);
-  const move  = (sy,cy,sv) => setFader(field, Math.max(0, Math.min(1, sv+(sy-cy)/getRange(ids.track))));
-  const drop  = () => set(field, Math.round(getV()*1000)/1000);
+  const getV    = () => parseFloat(document.getElementById(ids.val).textContent);
+  const move    = (sy,cy,sv) => setFader(field, Math.max(0, Math.min(1, sv+(sy-cy)/getRange(ids.track))));
+  const drop    = () => set(field, Math.round(getV()*1000)/1000);
+  const reset   = () => { const d = FIELD_DEFAULTS[field]??0.5; setFader(field,d); set(field,d); };
   bindDrag(trackEl, getV, move, drop);
   bindDrag(thumbEl, getV, move, drop);
+  trackEl.addEventListener('dblclick', reset);
+  thumbEl.addEventListener('dblclick', reset);
 });
 
 /* knob drag */
 Object.entries(KNOBS).forEach(([field, ids]) => {
   const knobEl = document.getElementById('knob-'+field);
-  const getV  = () => parseFloat(document.getElementById(ids.val).textContent);
-  const move  = (sy,cy,sv) => setKnob(field, Math.max(0, Math.min(1, sv+(sy-cy)/120)));
-  const drop  = () => set(field, Math.round(getV()*1000)/1000);
-  if (knobEl) bindDrag(knobEl, getV, move, drop);
+  const getV   = () => parseFloat(document.getElementById(ids.val).textContent);
+  const move   = (sy,cy,sv) => setKnob(field, Math.max(0, Math.min(1, sv+(sy-cy)/120)));
+  const drop   = () => set(field, Math.round(getV()*1000)/1000);
+  const reset  = () => { const d = FIELD_DEFAULTS[field]??0.5; setKnob(field,d); set(field,d); };
+  if (knobEl) { bindDrag(knobEl, getV, move, drop); knobEl.addEventListener('dblclick', reset); }
+});
+
+/* info box hover — attach to all labeled controls */
+document.querySelectorAll('.fader-lbl,.knob-lbl').forEach(el => {
+  const field = el.textContent.trim().toLowerCase();
+  el.addEventListener('mouseenter', () => showInfo(field));
+  el.addEventListener('mouseleave', clearInfo);
+});
+document.querySelectorAll('.ch-btn').forEach(el => {
+  const key = el.dataset.val;
+  el.addEventListener('mouseenter', () => showInfo(key));
+  el.addEventListener('mouseleave', clearInfo);
+});
+document.querySelectorAll('.pill-lbl').forEach(el => {
+  const key = el.textContent.trim();
+  el.addEventListener('mouseenter', () => showInfo(key));
+  el.addEventListener('mouseleave', clearInfo);
+});
+document.querySelectorAll('.meter-lbl').forEach(el => {
+  const field = el.textContent.trim().toLowerCase();
+  el.addEventListener('mouseenter', () => showInfo(field));
+  el.addEventListener('mouseleave', clearInfo);
+});
+document.querySelectorAll('.fader-track,.fader-thumb,.knob').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    const field = el.id?.replace('knob-','').replace('ft-','').replace('fth-','');
+    if (field) showInfo(field);
+  });
+  el.addEventListener('mouseleave', clearInfo);
 });
 
 /* build tick marks after layout */
@@ -1293,6 +1325,63 @@ async function runTask() {
 runBtn.addEventListener('click', runTask);
 taskInput.addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey)&&e.key==='Enter') runTask(); });
 loadHistory();
+
+// ── CTRL RUN LAUNCHER ────────────────────────────────────────────
+const launchInput   = document.getElementById('launch-input');
+const launchBtn     = document.getElementById('launch-btn');
+const launchRunning = document.getElementById('launch-running');
+
+async function launchTask() {
+  const task = launchInput.value.trim();
+  if (!task || launchBtn.disabled) return;
+  launchBtn.disabled = true; launchBtn.textContent = '···';
+  launchRunning.classList.add('show');
+  const snap = {
+    mode:      lastState.mode      || '—',
+    stance:    lastState.stance    || '—',
+    filter:    lastState.filter    || '—',
+    voice:     lastState.voice     || '—',
+    intensity: (lastState.intensity ?? 0).toFixed(2),
+    depth:     (lastState.depth     ?? 0).toFixed(2),
+    certainty: (lastState.certainty ?? 0).toFixed(2),
+    risk:      (lastState.risk      ?? 0).toFixed(2),
+    scope:     (lastState.scope     ?? 0).toFixed(2),
+    bandwidth: (lastState.bandwidth ?? 0).toFixed(2),
+    room:      (lastState.room      ?? 0).toFixed(2),
+    decay:     (lastState.decay     ?? 0).toFixed(2),
+  };
+  let output = '';
+  const done = () => {
+    launchBtn.disabled = false; launchBtn.textContent = 'LAUNCH';
+    launchRunning.classList.remove('show');
+  };
+  try {
+    const res = await fetch('/exec', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({task})});
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const {done: rd, value} = await reader.read(); if (rd) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const d = JSON.parse(line.slice(6));
+        if (d.text) output += d.text;
+        if (d.error) { done(); }
+        if (d.done) {
+          done();
+          if (output) {
+            history.unshift({t:new Date().toLocaleTimeString(), task, resp:output, ...snap});
+            if (history.length > 30) history.pop();
+            saveHistory(); renderHistory();
+            launchInput.value = '';
+          }
+        }
+      }
+    }
+  } catch(e) { done(); }
+}
+launchBtn.addEventListener('click', launchTask);
+launchInput.addEventListener('keydown', e => { if (e.key === 'Enter') launchTask(); });
 
 // ── FAQ ───────────────────────────────────────────────────────────
 function openFaq()  { document.getElementById('faq-overlay').classList.add('open'); document.getElementById('faq-panel').classList.add('open'); }
