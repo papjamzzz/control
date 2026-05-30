@@ -799,7 +799,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   </svg>
   <div class="hero-left">
     <div class="hero-brand">control</div>
-    <div class="hero-tagline">dial it in.</div>
+    <div class="hero-tagline">Tune Your AI</div>
   </div>
 </div>
 
