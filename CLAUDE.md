@@ -78,4 +78,4 @@ Build after launch when there's real usage data to make it meaningful.
 - Before/after: 147 lines → 9 lines (real example from dogfood run)
 
 ## Last Session
-2026-05-29 — All 4 tracks fully working. UI redesign in progress (VST metal skin). Video planned for today.
+2026-05-30 — UI redesign shipped. Cyber-analog aesthetic: near-black bg, teal/cyan + electric purple accents, neural grid hero, fader glows, cold steel thumbs. LAUNCH button is purple (file-tool agentic loop). PREVIEW RUN is teal (API only). Video next.
