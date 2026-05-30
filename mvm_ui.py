@@ -351,7 +351,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
 .hero svg{position:absolute;inset:0;width:100%;height:100%;}
 .hero-left{position:absolute;left:22px;top:50%;transform:translateY(-52%);pointer-events:none;z-index:1;}
 .hero-brand{font-family:'Abril Fatface',serif;font-size:62px;color:rgba(0,200,192,.06);line-height:1;}
-.hero-tagline{font-size:11px;font-weight:700;letter-spacing:.28em;color:rgba(0,200,192,.25);text-transform:uppercase;margin-top:4px;}
+.hero-tagline{font-size:11px;font-weight:700;letter-spacing:.28em;color:#FFE040;text-transform:uppercase;margin-top:4px;text-shadow:0 0 4px #FFF8D0,0 0 10px #FFD700,0 0 22px #FF8C00,0 0 40px #FF4500,0 0 60px rgba(255,40,0,.35);}
 
 /* ── MAIN 3-COLUMN CONSOLE ──────────────────────────────── */
 .console{flex:1;display:flex;overflow:hidden;min-height:0;}
@@ -799,7 +799,7 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);heigh
   </svg>
   <div class="hero-left">
     <div class="hero-brand">control</div>
-    <div class="hero-tagline">Tune Your AI</div>
+    <div class="hero-tagline">dial it in.</div>
   </div>
 </div>
 
