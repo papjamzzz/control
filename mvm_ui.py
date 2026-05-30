@@ -393,8 +393,9 @@ body{
   flex:1;display:flex;flex-direction:column;align-items:center;
   border-bottom:1px solid var(--border);
   padding:10px 6px 8px;gap:0;min-height:0;overflow:hidden;
-  background:linear-gradient(160deg,#0D1520 0%,#080E18 40%,#0A1018 100%);
+  background:linear-gradient(180deg,#0E1822 0%,#080E18 50%,#060B14 100%);
   position:relative;
+  box-shadow:inset 1px 0 0 rgba(0,196,232,.02),inset -1px 0 0 rgba(0,196,232,.02);
 }
 .ch:last-child{border-bottom:none;}
 
@@ -445,74 +446,87 @@ body{
 
 /* the groove/track */
 .fader-track{
-  width:10px;flex:1;
-  background:linear-gradient(180deg,#020305 0%,#040608 50%,#020305 100%);
-  border:1px solid #0E1820;
-  border-radius:2px;
+  width:13px;flex:1;
+  background:linear-gradient(180deg,#010203 0%,#030507 50%,#010203 100%);
+  border:1px solid #0A1620;
+  border-radius:3px;
   position:relative;
   cursor:ns-resize;
   touch-action:none;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.95),inset 0 0 0 1px rgba(0,200,192,.03),0 0 0 1px rgba(0,200,192,.02);
+  box-shadow:
+    inset 0 6px 12px rgba(0,0,0,.98),
+    inset 3px 0 5px rgba(0,0,0,.7),
+    inset -3px 0 5px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.02),
+    0 0 0 1px rgba(0,196,232,.03);
 }
 /* fill bar inside groove */
 .fader-fill{
   position:absolute;bottom:0;left:0;right:0;
-  border-radius:3px;
-  background:linear-gradient(0deg,var(--accent) 0%,var(--accent2) 60%,#80F8FF 100%);
-  opacity:.55;
+  border-radius:2px;
+  background:linear-gradient(0deg,#008898 0%,var(--accent) 40%,var(--accent2) 75%,#A0FEFF 100%);
+  opacity:.7;
   pointer-events:none;
-  box-shadow:0 0 12px rgba(0,196,232,.5),0 0 4px rgba(0,232,255,.7),0 0 24px rgba(0,196,232,.2);
+  box-shadow:0 0 14px rgba(0,196,232,.65),0 0 4px rgba(0,240,255,1),0 0 28px rgba(0,196,232,.3);
   transition:box-shadow .1s,opacity .1s;
 }
 .fader-track.dragging .fader-fill{
-  opacity:.8;
-  box-shadow:0 0 18px rgba(0,196,232,.8),0 0 6px rgba(0,232,255,1),0 0 40px rgba(0,196,232,.35),0 0 60px rgba(217,70,239,.15);
+  opacity:.9;
+  box-shadow:0 0 22px rgba(0,196,232,.9),0 0 6px rgba(0,250,255,1),0 0 50px rgba(0,196,232,.4),0 0 80px rgba(217,70,239,.2);
 }
 .fader-track.dragging .fader-thumb{
-  box-shadow:0 2px 8px rgba(0,0,0,.9),0 0 14px rgba(0,196,232,.6),0 0 28px rgba(0,196,232,.2),inset 0 1px 0 rgba(255,255,255,.2);
-  border-top-color:#C0E0F0;
+  box-shadow:
+    0 2px 10px rgba(0,0,0,.95),
+    0 0 18px rgba(0,196,232,.7),
+    0 0 36px rgba(0,196,232,.3),
+    0 0 0 1px rgba(0,220,255,.2),
+    inset 0 2px 0 rgba(255,255,255,.25);
+  border-top-color:#D0EEFF;
 }
 
 /* the hardware thumb cap */
 .fader-thumb{
   position:absolute;
-  width:36px;height:20px;
+  width:38px;height:24px;
   left:50%;transform:translateX(-50%);
   cursor:ns-resize;z-index:3;touch-action:none;
-  border-radius:3px;
-  /* machined steel — cold blue-steel palette */
+  border-radius:4px;
   background:linear-gradient(180deg,
-    var(--thumb-hi) 0%,
-    #7A9AB0 18%,
-    #304858 35%,
-    #1A2E40 48%,
-    #1A2E40 52%,
-    #304858 65%,
-    #7A9AB0 82%,
-    var(--thumb-hi) 100%
+    #D8EEFF 0%,      /* bright specular top */
+    #B0CDE0 6%,      /* shoulder */
+    #4A6880 20%,     /* upper body */
+    #243850 38%,     /* deep shadow */
+    #182840 48%,     /* center groove */
+    #182840 52%,     /* center groove */
+    #243850 62%,     /* deep shadow */
+    #4A6880 80%,     /* lower body */
+    #B0CDE0 94%,     /* shoulder */
+    #D8EEFF 100%     /* bright specular bottom */
   );
-  border:1px solid #0A1820;
-  border-top-color:#90B8CC;
-  border-bottom-color:#081018;
+  border:1px solid #081018;
+  border-top-color:#C0DCEE;
+  border-bottom-color:#060C14;
   box-shadow:
-    0 2px 8px rgba(0,0,0,.8),
-    0 0 0 1px rgba(0,200,192,.06),
-    inset 0 1px 0 rgba(255,255,255,.12),
-    0 0 6px rgba(0,200,192,.08);
+    0 3px 10px rgba(0,0,0,.9),
+    0 0 0 1px rgba(0,196,232,.08),
+    inset 0 2px 0 rgba(255,255,255,.18),
+    0 0 8px rgba(0,200,192,.1);
 }
-/* grip lines on thumb */
+/* grip serrations */
 .fader-thumb::before,.fader-thumb::after{
   content:'';position:absolute;
-  left:16%;right:16%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(0,0,0,.5) 20%,rgba(0,0,0,.5) 80%,transparent);
+  left:18%;right:18%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.35) 20%,rgba(0,0,0,.35) 80%,transparent);
 }
-.fader-thumb::before{top:calc(50% - 2px);}
-.fader-thumb::after {top:calc(50% + 2px);}
-/* center line on thumb */
+.fader-thumb::before{top:calc(50% - 4px);}
+.fader-thumb::after {top:calc(50% + 4px);}
+/* teal center stripe — the signature feature */
 .fader-thumb .thumb-center{
-  position:absolute;left:25%;right:25%;top:50%;
-  height:1px;transform:translateY(-50%);
-  background:rgba(255,255,255,.18);
+  position:absolute;left:12%;right:12%;top:50%;
+  height:2px;transform:translateY(-50%);
+  background:linear-gradient(90deg,transparent,rgba(0,210,255,.75) 15%,rgba(0,240,255,.95) 50%,rgba(0,210,255,.75) 85%,transparent);
+  box-shadow:0 0 5px rgba(0,200,255,.7),0 0 10px rgba(0,200,255,.3);
+  border-radius:1px;
 }
 
 .fader-val{
@@ -530,39 +544,48 @@ body{
 }
 .knob-lbl{font-size:8px;color:var(--text2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 .knob{
-  width:40px;height:40px;border-radius:50%;
+  width:44px;height:44px;border-radius:50%;
   position:relative;cursor:grab;touch-action:none;
-  /* outer ring */
-  background:conic-gradient(
-    var(--border2) 0deg,
-    var(--accent) 0deg 0deg,
-    var(--border2) 0deg 360deg
-  );
+  /* outer ring arc — background driven live by JS */
+  background:conic-gradient(#0C1820 0deg 225deg, #0C1820 225deg 360deg);
   box-shadow:
-    0 3px 12px rgba(0,0,0,.95),
-    0 0 16px rgba(0,196,232,.1),
-    0 0 30px rgba(0,196,232,.05),
-    inset 0 1px 0 rgba(255,255,255,.04);
+    0 4px 14px rgba(0,0,0,.98),
+    0 0 0 1px rgba(0,0,0,.9),
+    0 0 18px rgba(0,196,232,.1),
+    0 0 36px rgba(0,196,232,.05);
   transition:box-shadow .15s;
 }
-.knob:active{cursor:grabbing;box-shadow:0 3px 12px rgba(0,0,0,.95),0 0 20px rgba(0,196,232,.25),0 0 40px rgba(0,196,232,.1),inset 0 1px 0 rgba(255,255,255,.04);}
+.knob:active{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,.98),0 0 0 1px rgba(0,0,0,.9),0 0 24px rgba(0,196,232,.3),0 0 48px rgba(0,196,232,.12);}
+@keyframes detent-flash{
+  0%  {filter:brightness(1);}
+  35% {filter:brightness(2.5) drop-shadow(0 0 6px rgba(0,240,255,.9));}
+  100%{filter:brightness(1);}
+}
+.knob.at-detent{animation:detent-flash .28s ease-out;}
 /* inner body */
 .knob-body{
-  position:absolute;inset:4px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#1A2E42,#06101A);
-  border:1px solid rgba(0,0,0,.8);
-  box-shadow:inset 0 1px 4px rgba(255,255,255,.05),inset 0 0 12px rgba(0,200,192,.05);
+  position:absolute;inset:5px;border-radius:50%;
+  background:radial-gradient(circle at 32% 26%,#263C52 0%,#142030 35%,#080E18 100%);
+  border:1px solid rgba(0,0,0,.95);
+  box-shadow:
+    inset 0 2px 5px rgba(255,255,255,.09),
+    inset 0 -2px 4px rgba(0,0,0,.8),
+    inset 0 0 16px rgba(0,200,192,.06);
 }
-/* indicator dot */
+/* indicator pointer — bright white-to-teal line */
 .knob-dot{
   position:absolute;
-  width:3px;height:10px;
-  background:var(--accent2);
-  border-radius:1px;
-  top:7px;left:50%;
-  transform-origin:50% calc(50% + 12px - 7px);
+  width:4px;height:13px;
+  background:linear-gradient(180deg,#FFFFFF 0%,#80F0FF 35%,#00C8E8 100%);
+  border-radius:2px;
+  top:6px;left:50%;
+  transform-origin:50% 16px;
   transform:translateX(-50%) rotate(0deg);
-  box-shadow:0 0 6px rgba(0,232,224,.8),0 0 2px rgba(0,232,224,1);
+  box-shadow:0 0 6px rgba(0,240,255,.9),0 0 14px rgba(0,196,232,.7),0 0 24px rgba(0,196,232,.35);
+}
+@keyframes btn-pulse{
+  0%,100%{box-shadow:0 0 8px rgba(0,196,232,.35),0 0 18px rgba(0,196,232,.15),0 0 0 1px rgba(217,70,239,.12),inset 0 1px 0 rgba(0,232,255,.1),inset 0 0 8px rgba(0,196,232,.04);}
+  50%    {box-shadow:0 0 14px rgba(0,196,232,.55),0 0 30px rgba(0,196,232,.25),0 0 0 1px rgba(217,70,239,.22),inset 0 1px 0 rgba(0,232,255,.18),inset 0 0 14px rgba(0,196,232,.08);}
 }
 .knob-val{font-size:8px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:0 0 8px rgba(0,200,192,.5);}
 
@@ -586,13 +609,8 @@ body{
 .ch-btn.active{
   background:linear-gradient(180deg,#001C22,#001018);
   color:var(--accent2);border-color:var(--accent);
-  box-shadow:
-    0 0 8px rgba(0,196,232,.35),
-    0 0 18px rgba(0,196,232,.15),
-    0 0 0 1px rgba(217,70,239,.12),
-    inset 0 1px 0 rgba(0,232,255,.1),
-    inset 0 0 8px rgba(0,196,232,.04);
   text-shadow:0 0 6px rgba(0,232,255,.8),0 0 14px rgba(0,196,232,.4);
+  animation:btn-pulse 2.4s ease-in-out infinite;
 }
 
 /* ── CENTER MONITORING PANEL ───────────────────────────── */
@@ -1109,7 +1127,7 @@ body{
 </div>
 
 <script>
-const THUMB_H = 20;
+const THUMB_H = 24;
 const FADERS = {
   intensity: {fill:'ff-intensity', thumb:'fth-intensity', val:'fv-intensity', track:'ft-intensity'},
   certainty: {fill:'ff-certainty', thumb:'fth-certainty', val:'fv-certainty', track:'ft-certainty'},
@@ -1237,6 +1255,16 @@ function setKnob(field, v) {
   if (dot) dot.style.transform = `translateX(-50%) rotate(${-135+v*270}deg)`;
   const val = document.getElementById(k.val);
   if (val) val.textContent = v.toFixed(2);
+  // Live conic arc on outer ring: sweep from 225° to current position
+  const knobEl = document.getElementById('knob-'+field);
+  if (knobEl) {
+    const s = 225, e = s + v * 270;
+    const dark = '#0A1620';
+    const lit  = 'var(--accent)';
+    knobEl.style.background = e <= 360
+      ? `conic-gradient(${dark} 0deg ${s}deg,${lit} ${s}deg ${e}deg,${dark} ${e}deg 360deg)`
+      : `conic-gradient(${lit} 0deg ${e-360}deg,${dark} ${e-360}deg ${s}deg,${lit} ${s}deg 360deg)`;
+  }
 }
 function setMeter(field, v) {
   const f   = document.getElementById('m-'+field);
@@ -1417,7 +1445,13 @@ Object.entries(KNOBS).forEach(([field, ids]) => {
       vel = vel * KNOB_INERTIA + delta * (16 / dt) * (1 - KNOB_INERTIA);
       let nv = Math.max(0, Math.min(1, getV() + delta));
       // Center detent: visual snap to 0.5 (hold Shift to bypass)
-      if (!ev.shiftKey && Math.abs(nv - 0.5) < KNOB_DETENT) { nv = 0.5; vel = 0; }
+      if (!ev.shiftKey && Math.abs(nv - 0.5) < KNOB_DETENT) {
+        nv = 0.5; vel = 0;
+        knobEl.classList.remove('at-detent');
+        void knobEl.offsetWidth; // force reflow so re-adding retriggers animation
+        knobEl.classList.add('at-detent');
+        setTimeout(() => knobEl.classList.remove('at-detent'), 300);
+      }
       setKnob(field, nv);
       prevY = ev.clientY; prevT = now;
     }
